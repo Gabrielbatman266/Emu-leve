@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#0b0d12">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Leve Emu</title>
+<style>
+:root{--bg:#0b0d12;--panel:#151923;--line:#262c3a;--text:#e8ecf4;--dim:#8a93a6;--a:#e5484d;--b:#f5a524;--blue:#3e8bff;--ok:#30c48d}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;touch-action:none}
+button{font:inherit;color:inherit;cursor:pointer}
+.hidden{display:none!important}
+#toast{position:fixed;left:50%;bottom:4vh;transform:translateX(-50%);background:rgba(21,25,35,.95);border:1px solid var(--line);padding:10px 18px;border-radius:12px;font-size:15px;z-index:99;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
+#toast.show{opacity:1}
+
+/* escolha de papel */
+#choose{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;text-align:center}
+#choose h1{margin:0;font-size:34px;letter-spacing:1px}
+#choose p{margin:0;color:var(--dim)}
+.big{display:block;width:min(340px,90vw);padding:18px;border-radius:16px;border:2px solid var(--line);background:var(--panel);font-size:20px;font-weight:600}
+.big:focus,.big:hover{border-color:var(--blue);outline:none}
+#codeIn{width:min(340px,90vw);padding:16px;border-radius:14px;border:2px solid var(--line);background:#0f1219;color:var(--text);font-size:28px;text-align:center;letter-spacing:8px}
+
+/* TV */
+#host{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000}
+#screen{width:min(100vw,calc(100vh*256/240));height:min(100vh,calc(100vw*240/256));image-rendering:pixelated;image-rendering:crisp-edges;background:#000}
+#lobby{position:fixed;inset:0;background:rgba(11,13,18,.95);display:flex;align-items:center;justify-content:center;gap:6vw;padding:5vh 6vw}
+#lobby .col{max-width:46vw}
+#lobby h1{margin:0 0 1vh;font-size:5vh}
+#lobby .code{font-size:11vh;font-weight:800;letter-spacing:2vh;color:var(--ok);line-height:1}
+#lobby ol{color:var(--dim);font-size:2.6vh;padding-left:3vh;line-height:1.6}
+#lobby .url{font-size:2.2vh;color:var(--dim);word-break:break-all}
+#qr{background:#fff;padding:2vh;border-radius:2vh;width:42vh;height:42vh;display:flex;align-items:center;justify-content:center}
+#qr img,#qr canvas{width:100%!important;height:100%!important}
+#players{display:flex;gap:1.5vh;margin:2vh 0;flex-wrap:wrap}
+.chip{padding:1vh 2vh;border-radius:99px;border:2px solid var(--line);font-size:2.4vh;color:var(--dim)}
+.chip.on{border-color:var(--ok);color:var(--text)}
+#lobby .row{display:flex;gap:1.5vh;flex-wrap:wrap;margin-top:2vh}
+.tvbtn{padding:1.6vh 3vh;border-radius:1.5vh;border:2px solid var(--line);background:var(--panel);font-size:2.6vh}
+.tvbtn:focus,.tvbtn:hover{border-color:var(--blue);outline:none}
+#romLine{font-size:2.4vh;margin-top:1vh}
+#net{font-size:2.2vh;color:var(--dim)}
+
+/* CONTROLE */
+#padUI{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(circle at 50% 120%,#1b2030,#0b0d12 70%)}
+#bar{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));border-bottom:1px solid var(--line);font-size:14px}
+#dot{width:10px;height:10px;border-radius:50%;background:#555;flex:none}
+#dot.on{background:var(--ok)}
+#pStatus{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbtn{padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:13px}
+#ctrl{position:relative;flex:1;touch-action:none}
+#dpad{position:absolute;left:5vw;top:50%;transform:translateY(-50%);width:min(44vmin,190px);height:min(44vmin,190px)}
+#dpad .arm{position:absolute;background:#2a3142;border:1px solid #39425a}
+#dpad .h{left:0;right:0;top:33.3%;height:33.4%;border-radius:12px}
+#dpad .v{top:0;bottom:0;left:33.3%;width:33.4%;border-radius:12px}
+#dpad .cap{position:absolute;inset:33.3%;background:#2a3142}
+#dpad .ind{position:absolute;width:33.4%;height:33.4%;border-radius:10px;background:transparent;transition:background .05s}
+#dpad .ind.on{background:rgba(62,139,255,.55)}
+#iu{left:33.3%;top:0}#id{left:33.3%;bottom:0}#il{left:0;top:33.3%}#ir{right:0;top:33.3%}
+#abz{position:absolute;right:5vw;top:50%;transform:translateY(-50%) rotate(-20deg);display:flex;gap:min(5vmin,22px);align-items:center}
+.ab{width:min(22vmin,96px);height:min(22vmin,96px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:min(7vmin,30px);border:3px solid rgba(255,255,255,.12);transform:rotate(20deg)}
+.ab[data-b="1"]{background:var(--b);color:#2a1a00}
+.ab[data-b="0"]{background:var(--a);color:#fff;margin-top:-10vmin}
+.ab.on,.mid.on{filter:brightness(1.5);transform:rotate(20deg) scale(.93)}
+#mids{position:absolute;left:50%;bottom:6vh;transform:translateX(-50%);display:flex;gap:16px}
+.mid{padding:10px 18px;border-radius:99px;background:#2a3142;border:1px solid #39425a;font-size:13px;letter-spacing:1px;color:var(--dim)}
+.mid.on{transform:scale(.93)}
+#rot{position:absolute;top:10px;left:50%;transform:translateX(-50%);color:var(--dim);font-size:12px}
+@media (orientation:landscape){#rot{display:none}}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<!-- Escolha -->
+<div id="choose" class="hidden">
+  <h1>🎮 Leve Emu</h1>
+  <p>Emulador de NES — celulares viram controle</p>
+  <button class="big" id="beTV" autofocus>📺 Esta tela é a TV</button>
+  <input id="codeIn" inputmode="numeric" maxlength="4" placeholder="código">
+  <button class="big" id="bePad">📱 Usar como controle</button>
+</div>
+
+<!-- TV -->
+<div id="host" class="hidden">
+  <canvas id="screen" width="256" height="240"></canvas>
+  <div id="lobby">
+    <div class="col">
+      <h1>🎮 Leve Emu</h1>
+      <div id="net">Conectando…</div>
+      <div class="code" id="codeBig">----</div>
+      <ol>
+        <li>Celulares no mesmo Wi‑Fi da TV</li>
+        <li>Escaneie o QR code (ou digite o código)</li>
+        <li>No celular, toque em <b>Jogo</b> e envie um arquivo .nes</li>
+      </ol>
+      <div id="players"></div>
+      <div id="romLine">Nenhum jogo carregado</div>
+      <div class="row">
+        <button class="tvbtn" id="playBtn">▶ Jogar / ativar som</button>
+        <label class="tvbtn" tabindex="0" id="fileLbl">📁 Abrir .nes aqui<input type="file" id="fileTV" accept=".nes,application/octet-stream" hidden></label>
+        <button class="tvbtn" id="swapRole">Trocar modo</button>
+      </div>
+    </div>
+    <div class="col" style="text-align:center">
+      <div id="qr"></div>
+      <div class="url" id="urlTxt"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTROLE -->
+<div id="padUI" class="hidden">
+  <div id="bar">
+    <div id="dot"></div>
+    <div id="pStatus">Conectando…</div>
+    <label class="sbtn">🎮 Jogo<input type="file" id="filePad" accept=".nes,application/octet-stream" hidden></label>
+    <button class="sbtn" data-cmd="save">💾</button>
+    <button class="sbtn" data-cmd="load">⏪</button>
+    <button class="sbtn" data-cmd="menu">☰</button>
+  </div>
+  <div id="ctrl">
+    <div id="rot">Gire o celular para jogar melhor ↻</div>
+    <div id="dpad" data-b="dpad">
+      <div class="arm h"></div><div class="arm v"></div><div class="cap"></div>
+      <div class="ind" id="iu"></div><div class="ind" id="id"></div><div class="ind" id="il"></div><div class="ind" id="ir"></div>
+    </div>
+    <div id="mids"><div class="mid" data-b="2">SELECT</div><div class="mid" data-b="3">START</div></div>
+    <div id="abz"><div class="ab" data-b="1">B</div><div class="ab" data-b="0">A</div></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsnes@1.2.1/dist/jsnes.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+"use strict";
+const PREFIX='levemu-v1-';
+const $=id=>document.getElementById(id);
+const qs=new URLSearchParams(location.search);
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+let toastT;
+function toast(msg,ms){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),ms||2600)}
+function baseURL(){return location.origin+location.pathname}
+
+/* ---------- roteamento ---------- */
+const joinCode=qs.get('join');
+if(joinCode) startPad(joinCode);
+else if(qs.has('tv')||store.get('levemu-role')==='tv') startHost();
+else{
+  $('choose').classList.remove('hidden');
+  $('beTV').onclick=()=>{store.set('levemu-role','tv');startHost()};
+  $('bePad').onclick=()=>{const c=$('codeIn').value.trim();if(!/^\d{4}$/.test(c))return toast('Digite o código de 4 números da TV');location.href=baseURL()+'?join='+c};
+}
+
+/* =================== TV / HOST =================== */
+function startHost(){
+  $('choose').classList.add('hidden');$('host').classList.remove('hidden');
+  if(typeof jsnes==='undefined'){toast('Não carregou o emulador — precisa de internet na primeira vez',8000);return}
+  const cv=$('screen'),ctx=cv.getContext('2d');
+  const img=ctx.createImageData(256,240);
+  const buf32=new Uint32Array(img.data.buffer);
+  // áudio
+  const SAMPLES=8192,MASK=SAMPLES-1,aL=new Float32Array(SAMPLES),aR=new Float32Array(SAMPLES);
+  let wPos=0,rPos=0,audioCtx=null;
+  try{
+    audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    const sp=audioCtx.createScriptProcessor(1024,0,2);
+    sp.onaudioprocess=e=>{
+      const L=e.outputBuffer.getChannelData(0),R=e.outputBuffer.getChannelData(1);
+      for(let i=0;i<L.length;i++){
+        if(rPos!==wPos){L[i]=aL[rPos];R[i]=aR[rPos];rPos=(rPos+1)&MASK}else{L[i]=R[i]=0}
+      }
+    };
+    sp.connect(audioCtx.destination);
+  }catch(e){audioCtx=null}
+  function wakeAudio(){if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{})}
+  const nes=new jsnes.NES({
+    sampleRate:audioCtx?audioCtx.sampleRate:44100,
+    onFrame(fb){for(let i=0;i<61440;i++)buf32[i]=0xFF000000|fb[i]},
+    onAudioSample(l,r){const n=(wPos+1)&MASK;if(n===rPos)return;aL[wPos]=l;aR[wPos]=r;wPos=n}
+  });
+
+  let romName=null,running=false,menuOpen=true;
+  const FRAME=1000/60.0988;let last=0,acc=0;
+  function loop(t){
+    requestAnimationFrame(loop);
+    if(!running||menuOpen){last=t;return}
+    let dt=t-last;last=t;if(dt>100)dt=100;acc+=dt;
+    let n=0;
+    while(acc>=FRAME&&n<4){nes.frame();acc-=FRAME;n++}
+    // se o áudio está acabando, roda um quadro extra para não estalar
+    if(n&&audioCtx&&((wPos-rPos)&MASK)<1024&&n<4)nes.frame();
+    if(n)ctx.putImageData(img,0,0);
+  }
+  requestAnimationFrame(loop);
+
+  function u8ToBin(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return s}
+  function loadRom(u8,name,silent){
+    if(!(u8[0]===0x4E&&u8[1]===0x45&&u8[2]===0x53)){toast('Esse arquivo não é um jogo de NES (.nes)');return false}
+    try{nes.loadROM(u8ToBin(u8))}catch(e){toast('Esse jogo não é compatível: '+e.message,5000);return false}
+    romName=name||'jogo';running=true;wPos=rPos=0;
+    for(let p=0;p<2;p++){padApplied[p]=0}
+    $('romLine').textContent='🎮 '+romName;
+    if(u8.length<1500000)store.set('levemu-rom',JSON.stringify({n:romName,d:btoa(u8ToBin(u8))}));
+    broadcast({t:'state',rom:romName});
+    if(!silent){closeMenu();toast('Carregado: '+romName)}
+    return true;
+  }
+  // último jogo usado
+  try{const r=JSON.parse(store.get('levemu-rom')||'null');if(r){const b=atob(r.d),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);loadRom(u,r.n,true)}}catch(e){}
+
+  function openMenu(){menuOpen=true;$('lobby').classList.remove('hidden');setTimeout(()=>$('playBtn').focus(),50)}
+  function closeMenu(){if(!romName){toast('Envie um jogo pelo celular primeiro');return}wakeAudio();menuOpen=false;$('lobby').classList.add('hidden');if(audioCtx&&audioCtx.state!=='running')toast('Aperte OK no controle remoto para ligar o som',4000)}
+  $('playBtn').onclick=()=>{wakeAudio();closeMenu()};
+  $('swapRole').onclick=()=>{store.del('levemu-role');location.href=baseURL()};
+  $('fileLbl').onkeydown=e=>{if(e.key==='Enter')$('fileTV').click()};
+  $('fileTV').onchange=async e=>{const f=e.target.files[0];if(f)loadRom(new Uint8Array(await f.arrayBuffer()),f.name.replace(/\.nes$/i,''))};
+  setTimeout(()=>$('playBtn').focus(),100);
+
+  // save states
+  let memState=null;
+  function saveState(){if(!romName)return;try{const s=JSON.stringify(nes.toJSON());memState=s;store.set('levemu-st-'+romName,s);toast('💾 Jogo salvo')}catch(e){toast('Não deu para salvar')}}
+  function loadState(){if(!romName)return;const s=store.get('levemu-st-'+romName)||memState;if(!s)return toast('Nenhum save ainda');try{nes.fromJSON(JSON.parse(s));toast('⏪ Save carregado')}catch(e){toast('Save inválido')}}
+
+  // entradas
+  const phone=[0,0],padApplied=[0,0];let kb=0;
+  function applyPad(p){
+    const m=phone[p]|(p===0?kb:0),ch=padApplied[p]^m;if(!ch)return;
+    if(romName)for(let b=0;b<8;b++)if(ch&(1<<b)){if(m&(1<<b))nes.buttonDown(p+1,b);else nes.buttonUp(p+1,b)}
+    padApplied[p]=m;
+  }
+  const KEYS={ArrowUp:4,ArrowDown:5,ArrowLeft:6,ArrowRight:7,KeyX:0,KeyZ:1,Enter:3,ShiftRight:2,Space:2};
+  addEventListener('keydown',e=>{
+    wakeAudio();
+    if(e.key==='Escape'||e.key==='Backspace'||e.key==='GoBack'||e.keyCode===461){e.preventDefault();menuOpen?closeMenu():openMenu();return}
+    if(menuOpen)return;
+    const b=KEYS[e.code];if(b===undefined)return;e.preventDefault();kb|=1<<b;applyPad(0);
+  });
+  addEventListener('keyup',e=>{const b=KEYS[e.code];if(b===undefined)return;kb&=~(1<<b);applyPad(0)});
+  addEventListener('pointerdown',wakeAudio);
+
+  // rede
+  let code=store.get('levemu-code');if(!/^\d{4}$/.test(code||''))code=newCode();
+  function newCode(){const c=String(1000+Math.floor(Math.random()*9000));store.set('levemu-code',c);return c}
+  const conns=new Set(),slots=[null,null];let peer,tries=0;
+  function showCode(){
+    $('codeBig').textContent=code;
+    const url=baseURL()+'?join='+code;$('urlTxt').textContent=url;
+    const q=$('qr');q.innerHTML='';
+    if(typeof QRCode!=='undefined')new QRCode(q,{text:url,width:400,height:400,correctLevel:QRCode.CorrectLevel.M});
+    else q.textContent='Abra no celular: '+url;
+  }
+  function startPeer(){
+    showCode();
+    if(typeof Peer==='undefined'){$('net').textContent='⚠ Sem internet para conectar os celulares';return}
+    peer=new Peer(PREFIX+code,{debug:0});
+    peer.on('open',()=>{tries=0;$('net').textContent='🟢 Pronto para conectar celulares'});
+    peer.on('connection',onConn);
+    peer.on('disconnected',()=>{$('net').textContent='Reconectando…';try{peer.reconnect()}catch(e){}});
+    peer.on('error',err=>{
+      if(err.type==='unavailable-id'){peer.destroy();if(++tries>2){code=newCode();tries=0}setTimeout(startPeer,1500)}
+      else if(['network','server-error','socket-error','socket-closed'].includes(err.type)){$('net').textContent='⚠ Sem conexão — tentando de novo…';setTimeout(()=>{if(peer.disconnected&&!peer.destroyed)try{peer.reconnect()}catch(e){}},3000)}
+    });
+  }
+  function onConn(c){
+    c.on('open',()=>{
+      conns.add(c);const s=slots.indexOf(null);c.slot=s;if(s>=0)slots[s]=c;
+      c.send({t:'hello',slot:s,rom:romName});renderPlayers();
+      toast(s>=0?'📱 Jogador '+(s+1)+' conectou':'📱 Celular na fila (NES aceita 2 jogadores)');
+    });
+    c.on('data',d=>handle(c,d));
+    c.on('close',()=>drop(c));c.on('error',()=>drop(c));
+  }
+  function drop(c){
+    if(!conns.has(c))return;conns.delete(c);
+    if(c.slot>=0){
+      const s=c.slot;slots[s]=null;phone[s]=0;applyPad(s);
+      for(const o of conns)if(o.slot<0){o.slot=s;slots[s]=o;o.send({t:'hello',slot:s,rom:romName});break}
+    }
+    renderPlayers();
+  }
+  function handle(c,d){
+    if(!d||typeof d!=='object')return;
+    if(d.t==='p'){if(c.slot>=0){phone[c.slot]=d.m&255;applyPad(c.slot)}}
+    else if(d.t==='rom'){const u=d.data instanceof ArrayBuffer?new Uint8Array(d.data):new Uint8Array(d.data.buffer||d.data);if(loadRom(u,String(d.name||'jogo').slice(0,60)))c.send({t:'ok',msg:'Jogo aberto na TV'});else c.send({t:'ok',msg:'A TV não conseguiu abrir esse jogo'})}
+    else if(d.t==='cmd'){
+      if(d.c==='save')saveState();else if(d.c==='load')loadState();
+      else if(d.c==='menu')menuOpen?closeMenu():openMenu();
+      wakeAudio();
+    }
+  }
+  function broadcast(m){for(const c of conns)try{c.send(m)}catch(e){}}
+  function renderPlayers(){
+    const wait=[...conns].filter(c=>c.slot<0).length;
+    $('players').innerHTML=slots.map((s,i)=>'<div class="chip'+(s?' on':'')+'">'+(s?'🟢':'⚪')+' Jogador '+(i+1)+'</div>').join('')+(wait?'<div class="chip">+'+wait+' na fila</div>':'');
+  }
+  renderPlayers();startPeer();
+}
+
+/* =================== CONTROLE =================== */
+function startPad(code){
+  $('padUI').classList.remove('hidden');
+  const st=$('pStatus'),dot=$('dot');
+  let conn=null,peer=null,slot=-1,mask=0,reconnecting=false;
+  function status(t,on){st.textContent=t;dot.classList.toggle('on',!!on)}
+  if(typeof Peer==='undefined'){status('Sem internet para conectar');return}
+  function connect(){
+    reconnecting=false;
+    if(!peer||peer.destroyed){peer=new Peer({debug:0});peer.on('open',connect);peer.on('error',onErr);return}
+    if(!peer.open)return;
+    status('Procurando a TV '+code+'…');
+    conn=peer.connect(PREFIX+code,{reliable:true});
+    conn.on('open',()=>{status('Conectado',true);send({t:'p',m:mask})});
+    conn.on('data',d=>{
+      if(d.t==='hello'){slot=d.slot;status(slot>=0?'Jogador '+(slot+1)+(d.rom?' · '+d.rom:' · envie um jogo'):'Na fila — espere uma vaga',true)}
+      else if(d.t==='state'){if(slot>=0)status('Jogador '+(slot+1)+' · '+d.rom,true)}
+      else if(d.t==='ok')toast(d.msg);
+    });
+    conn.on('close',retry);
+  }
+  function retry(){if(reconnecting)return;reconnecting=true;status('Desconectado — reconectando…');setTimeout(connect,1500)}
+  function onErr(e){if(e.type==='peer-unavailable'){status('TV '+code+' não encontrada — ela está aberta?');reconnecting=false;retry()}else if(e.type!=='unavailable-id'){retry()}}
+  connect();
+  function send(m){if(conn&&conn.open)try{conn.send(m)}catch(e){}}
+
+  // botões de cima
+  document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>send({t:'cmd',c:b.dataset.cmd}));
+  $('filePad').onchange=async e=>{
+    const f=e.target.files[0];e.target.value='';if(!f)return;
+    if(f.size>4e6)return toast('Arquivo grande demais para NES');
+    if(!conn||!conn.open)return toast('Ainda não conectado na TV');
+    toast('Enviando '+f.name+'…');send({t:'rom',name:f.name.replace(/\.nes$/i,''),data:await f.arrayBuffer()});
+  };
+
+  // toque multi-dedo
+  const ctrl=$('ctrl'),dpad=$('dpad');
+  const dpadTouches=new Set();let firstTouch=true;
+  function dirMask(x,y){
+    const r=dpad.getBoundingClientRect(),dx=x-(r.left+r.width/2),dy=y-(r.top+r.height/2);
+    if(Math.hypot(dx,dy)<r.width*0.12)return 0;
+    const a=Math.atan2(dy,dx)*180/Math.PI;let m=0;
+    if(a>-67.5&&a<67.5)m|=1<<7;if(a>22.5&&a<157.5)m|=1<<5;if(a>112.5||a<-112.5)m|=1<<6;if(a>-157.5&&a<-22.5)m|=1<<4;
+    return m;
+  }
+  function onTouch(e){
+    e.preventDefault();
+    if(firstTouch){firstTouch=false;try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(x){}try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(x){}}
+    if(e.type==='touchstart')for(const t of e.changedTouches){const el=document.elementFromPoint(t.clientX,t.clientY);if(el&&el.closest('#dpad'))dpadTouches.add(t.identifier)}
+    if(e.type==='touchend'||e.type==='touchcancel')for(const t of e.changedTouches)dpadTouches.delete(t.identifier);
+    let m=0;
+    for(const t of e.touches){
+      if(dpadTouches.has(t.identifier)){m|=dirMask(t.clientX,t.clientY);continue}
+      const el=document.elementFromPoint(t.clientX,t.clientY),z=el&&el.closest('[data-b]');
+      if(z&&z.dataset.b!=='dpad')m|=1<<(+z.dataset.b);
+    }
+    setMask(m);
+  }
+  ['touchstart','touchmove','touchend','touchcancel'].forEach(ev=>ctrl.addEventListener(ev,onTouch,{passive:false}));
+  const vis=[['iu',4],['id',5],['il',6],['ir',7]];
+  function setMask(m){
+    if(m===mask)return;
+    if(m&~mask)try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
+    mask=m;send({t:'p',m});
+    for(const [id,b] of vis)$(id).classList.toggle('on',!!(m&(1<<b)));
+    document.querySelectorAll('.ab,.mid').forEach(el=>el.classList.toggle('on',!!(m&(1<<(+el.dataset.b)))));
+  }
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)setMask(0)});
+}
+</script>
+</body>
+</html>
