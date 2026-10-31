@@ -410,7 +410,8 @@ function startHost(){
       c.send({t:'hello',slot:s,rom:emu.romName});renderPlayers();
       toast(s>=0?'📱 Jogador '+(s+1)+' conectou':'📱 Celular na fila (NES aceita 2 jogadores)');
     });
-    c.on('data',d=>handle(c,d));
+    c.lastRx=Date.now();
+    c.on('data',d=>{c.lastRx=Date.now();handle(c,d)});
     c.on('close',()=>drop(c));c.on('error',()=>drop(c));
   }
   function drop(c){
@@ -423,7 +424,7 @@ function startHost(){
   }
   function handle(c,d){
     if(!d||typeof d!=='object')return;
-    if(d.t==='p'){if(c.slot>=0){phone[c.slot]=d.m&255;applyPad(c.slot)}}
+    if(d.t==='p'){if(c.slot>=0){phone[c.slot]=d.m&255;if(d.m&&menuOpen()){if(emu.romName)closeMenu();else toast('Envie um jogo pelo celular (botão 🎮 Jogo)')}applyPad(c.slot)}}
     else if(d.t==='rom'){const u=d.data instanceof ArrayBuffer?new Uint8Array(d.data):new Uint8Array(d.data.buffer||d.data);c.send({t:'ok',msg:loadRom(u,String(d.name||'jogo').slice(0,60))?'Jogo aberto na TV':'A TV não conseguiu abrir esse jogo'})}
     else if(d.t==='cmd'){
       if(d.c==='save')emu.save();else if(d.c==='load')emu.loadState();
@@ -431,6 +432,7 @@ function startHost(){
       emu.wakeAudio();
     }
   }
+  setInterval(()=>{const now=Date.now();for(const c of [...conns]){if(now-c.lastRx>7000){try{c.close()}catch(e){}drop(c)}else try{c.send({t:'hb'})}catch(e){}}},2000);
   function broadcast(m){for(const c of conns)try{c.send(m)}catch(e){}}
   function renderPlayers(){
     const wait=[...conns].filter(c=>c.slot<0).length;
@@ -455,16 +457,24 @@ function startPad(code){
     if(!peer.open)return;
     status('Procurando a TV '+code+'…');
     conn=peer.connect(PREFIX+code,{reliable:true});
-    conn.on('open',()=>{status('Conectado',true);send({t:'p',m:pad.mask})});
+    const cc=conn;setTimeout(()=>{if(conn===cc&&!cc.open){status('Não conectou — TV e celular no mesmo Wi‑Fi? Tentando de novo…');try{cc.close()}catch(e){}retry()}},10000);
+    conn.on('open',()=>{lastRx=Date.now();status('Conectado',true);send({t:'p',m:pad.mask})});
     conn.on('data',d=>{
+      lastRx=Date.now();
       if(d.t==='hello'){slot=d.slot;status(slot>=0?'Jogador '+(slot+1)+(d.rom?' · '+d.rom:' · envie um jogo'):'Na fila — espere uma vaga',true)}
       else if(d.t==='state'){if(slot>=0)status('Jogador '+(slot+1)+' · '+d.rom,true)}
       else if(d.t==='ok')toast(d.msg);
     });
-    conn.on('close',retry);
+    const me=conn;me.on('close',()=>{if(conn===me)retry()});
   }
   function retry(){if(reconnecting)return;reconnecting=true;status('Desconectado — reconectando…');setTimeout(connect,1500)}
   function onErr(e){if(e.type==='peer-unavailable'){status('TV '+code+' não encontrada — ela está aberta?');reconnecting=false;retry()}else if(e.type!=='unavailable-id'){retry()}}
+  let lastRx=0;
+  setInterval(()=>{
+    if(!conn||!conn.open)return;
+    if(Date.now()-lastRx>5000){status('A TV parou de responder — reconectando…');const old=conn;conn=null;try{old.close()}catch(e){}retry();return}
+    send({t:'hb'});
+  },1500);
   connect();
   document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>send({t:'cmd',c:b.dataset.cmd}));
   $('filePad').onchange=async e=>{
