@@ -135,6 +135,7 @@ button{font:inherit;color:inherit;cursor:pointer}
         <li>Celulares no mesmo Wi‑Fi da TV</li>
         <li>Escaneie o QR code (ou digite o código)</li>
         <li>No celular, toque em <b>Jogo</b> e envie um arquivo .nes</li>
+        <li>Menos atraso: ligue o <b>Modo Jogo</b> nas configurações de imagem da TV</li>
       </ol>
       <div id="players"></div>
       <div id="romLine">Nenhum jogo carregado</div>
@@ -158,6 +159,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   <div class="bar">
     <div class="dot" id="dot"></div>
     <div class="stat" id="pStatus">Conectando…</div>
+    <span id="ping" style="font-size:12px;color:var(--dim);flex:none"></span>
     <label class="sbtn">🎮 Jogo<input type="file" id="filePad" accept=".nes,application/octet-stream" hidden></label>
     <button class="sbtn" data-cmd="save">💾</button>
     <button class="sbtn" data-cmd="load">⏪</button>
@@ -224,7 +226,7 @@ function showChooser(){
 /* =================== NÚCLEO DO EMULADOR (TV e solo) =================== */
 function makeEmu(canvas){
   if(typeof jsnes==='undefined'){toast('Não carregou o emulador — precisa de internet na primeira vez',8000);return null}
-  const ctx=canvas.getContext('2d'),img=ctx.createImageData(256,240),buf32=new Uint32Array(img.data.buffer);
+  const ctx=canvas.getContext('2d',{alpha:false,desynchronized:true})||canvas.getContext('2d'),img=ctx.createImageData(256,240),buf32=new Uint32Array(img.data.buffer);
   const SAMPLES=8192,MASK=SAMPLES-1,aL=new Float32Array(SAMPLES),aR=new Float32Array(SAMPLES);
   let wPos=0,rPos=0,audioCtx=null,primed=false,wantDraw=true;
   try{
@@ -425,8 +427,14 @@ function startHost(){
       else if(['network','server-error','socket-error','socket-closed'].includes(err.type)){$('net').textContent='⚠ Sem conexão — tentando de novo…';setTimeout(()=>{if(peer.disconnected&&!peer.destroyed)try{peer.reconnect()}catch(e){}},3000)}
     });
   }
+  const mainByPeer={};
   function onConn(c){
+    if(c.label==='in'){ // canal rápido só para botões (sem fila, sem retransmissão em ordem)
+      c.on('data',d=>fast(c,d));
+      return;
+    }
     c.on('open',()=>{
+      mainByPeer[c.peer]=c;
       conns.add(c);const s=slots.indexOf(null);c.slot=s;if(s>=0)slots[s]=c;
       c.send({t:'hello',slot:s,rom:emu.romName});renderPlayers();
       toast(s>=0?'📱 Jogador '+(s+1)+' conectou':'📱 Celular na fila (NES aceita 2 jogadores)');
@@ -436,17 +444,33 @@ function startHost(){
     c.on('close',()=>drop(c));c.on('error',()=>drop(c));
   }
   function drop(c){
-    if(!conns.has(c))return;conns.delete(c);
+    if(!conns.has(c))return;conns.delete(c);if(mainByPeer[c.peer]===c)delete mainByPeer[c.peer];
     if(c.slot>=0){
       const s=c.slot;slots[s]=null;phone[s]=0;applyPad(s);
       for(const o of conns)if(o.slot<0){o.slot=s;slots[s]=o;o.send({t:'hello',slot:s,rom:emu.romName});break}
     }
     renderPlayers();
   }
+  function setPhone(c,mask){
+    if(c.slot<0)return;
+    phone[c.slot]=mask;
+    if(mask&&menuOpen()){if(emu.romName)closeMenu();else toast('Envie um jogo pelo celular (botão 🎮 Jogo)')}
+    applyPad(c.slot);
+  }
+  function fast(c,d){
+    if(typeof d!=='string'||!d.length)return;
+    if(d[0]==='p'){try{c.send(d)}catch(e){}return} // ping: devolve na hora
+    if(d[0]!=='i'||d.length<3)return;
+    const m=mainByPeer[c.peer];if(!m)return;
+    const seq=d.charCodeAt(1);
+    if(m.seq!==undefined){const df=(seq-m.seq)&255;if(df===0||df>128)return} // repetido ou atrasado
+    m.seq=seq;m.lastRx=m.lastFast=Date.now();
+    setPhone(m,d.charCodeAt(2)&255);
+  }
   function handle(c,d){
     if(!d||typeof d!=='object')return;
-    if(d.t==='hb'&&typeof d.m==='number'&&c.slot>=0&&phone[c.slot]!==(d.m&255)){phone[c.slot]=d.m&255;applyPad(c.slot)}
-    else if(d.t==='p'){if(c.slot>=0){phone[c.slot]=d.m&255;if(d.m&&menuOpen()){if(emu.romName)closeMenu();else toast('Envie um jogo pelo celular (botão 🎮 Jogo)')}applyPad(c.slot)}}
+    if(d.t==='hb'){if(typeof d.m==='number'&&c.slot>=0&&Date.now()-(c.lastFast||0)>1000&&phone[c.slot]!==(d.m&255)){phone[c.slot]=d.m&255;applyPad(c.slot)}}
+    else if(d.t==='p'){setPhone(c,d.m&255)}
     else if(d.t==='rom'){const u=d.data instanceof ArrayBuffer?new Uint8Array(d.data):new Uint8Array(d.data.buffer||d.data);c.send({t:'ok',msg:loadRom(u,String(d.name||'jogo').slice(0,60))?'Jogo aberto na TV':'A TV não conseguiu abrir esse jogo'})}
     else if(d.t==='cmd'){
       if(d.c==='save')emu.save();else if(d.c==='load')emu.loadState();
@@ -472,7 +496,19 @@ function startPad(code){
   let conn=null,peer=null,slot=-1,reconnecting=false;
   function status(t,on){st.textContent=t;dot.classList.toggle('on',!!on)}
   function send(m){if(conn&&conn.open)try{conn.send(m)}catch(e){}}
-  const pad=makeTouchPad($('padCtrl'),m=>send({t:'p',m}));
+  let fast=null,seq=0;
+  function sendInput(m){
+    seq=(seq+1)&255;const pkt='i'+String.fromCharCode(seq,m);
+    if(fast&&fast.open){try{fast.send(pkt);fast.send(pkt)}catch(e){send({t:'p',m})}} // vai 2x: se um se perder no Wi‑Fi, o outro chega
+    else send({t:'p',m});
+  }
+  const pad=makeTouchPad($('padCtrl'),sendInput);
+  function openFast(){
+    if(fast)try{fast.close()}catch(e){}
+    const f=fast=peer.connect(PREFIX+code,{label:'in',reliable:false,serialization:'raw'});
+    f.on('open',()=>{if(fast===f)sendInput(pad.mask)});
+    f.on('data',d=>{if(typeof d==='string'&&d[0]==='p'){const ms=Math.round(performance.now()-parseFloat(d.slice(1)));const el=$('ping');el.textContent='⚡'+ms+' ms';el.style.color=ms<30?'var(--ok)':ms<80?'var(--b)':'var(--a)'}});
+  }
   if(typeof Peer==='undefined'){status('Sem internet para conectar');return}
   function connect(){
     reconnecting=false;
@@ -481,7 +517,7 @@ function startPad(code){
     status('Procurando a TV '+code+'…');
     conn=peer.connect(PREFIX+code,{reliable:true});
     const cc=conn;setTimeout(()=>{if(conn===cc&&!cc.open){status('Não conectou — TV e celular no mesmo Wi‑Fi? Tentando de novo…');try{cc.close()}catch(e){}retry()}},10000);
-    conn.on('open',()=>{lastRx=Date.now();status('Conectado',true);send({t:'p',m:pad.mask});
+    conn.on('open',()=>{lastRx=Date.now();status('Conectado',true);send({t:'p',m:pad.mask});openFast();
       const pc=conn.peerConnection;setTimeout(()=>{try{pc.getStats().then(st=>{let pair=null;st.forEach(r=>{if(r.type==='candidate-pair'&&r.state==='succeeded'&&(r.nominated||r.selected))pair=r});if(!pair)return;const lc=st.get(pair.localCandidateId),rc=st.get(pair.remoteCandidateId);
         if((lc&&lc.candidateType==='relay')||(rc&&rc.candidateType==='relay'))toast('⚠ A conexão está passando pela internet (lento). Deixe TV e celular no mesmo Wi‑Fi.',7000);
         if(pair.currentRoundTripTime)console.log('rtt',pair.currentRoundTripTime)}).catch(()=>{})}catch(e){}},2500)});
@@ -494,13 +530,14 @@ function startPad(code){
     });
     const me=conn;me.on('close',()=>{if(conn===me)retry()});
   }
-  function retry(){if(reconnecting)return;reconnecting=true;status('Desconectado — reconectando…');setTimeout(connect,1500)}
+  function retry(){if(fast){try{fast.close()}catch(e){}fast=null}if(reconnecting)return;reconnecting=true;status('Desconectado — reconectando…');setTimeout(connect,1500)}
   function onErr(e){if(e.type==='peer-unavailable'){status('TV '+code+' não encontrada — ela está aberta?');reconnecting=false;retry()}else if(e.type!=='unavailable-id'){retry()}}
   let lastRx=0;
   setInterval(()=>{
     if(!conn||!conn.open)return;
     if(Date.now()-lastRx>5000){status('A TV parou de responder — reconectando…');const old=conn;conn=null;try{old.close()}catch(e){}retry();return}
     send({t:'hb',m:pad.mask});
+    if(fast&&fast.open)try{fast.send('p'+performance.now())}catch(e){}
   },1500);
   connect();
   document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>send({t:'cmd',c:b.dataset.cmd}));
