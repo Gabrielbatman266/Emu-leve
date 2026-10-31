@@ -16,13 +16,15 @@ button{font:inherit;color:inherit;cursor:pointer}
 #toast{position:fixed;left:50%;bottom:4vh;transform:translateX(-50%);background:rgba(21,25,35,.95);border:1px solid var(--line);padding:10px 18px;border-radius:12px;font-size:15px;z-index:99;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90vw;text-align:center}
 #toast.show{opacity:1}
 
-/* escolha de papel */
-#choose{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:16px;text-align:center}
+/* escolha de modo */
+#choose{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;text-align:center;overflow-y:auto;touch-action:pan-y}
 #choose h1{margin:0;font-size:34px;letter-spacing:1px}
 #choose p{margin:0;color:var(--dim)}
+#choose .sep{color:var(--dim);font-size:13px;margin-top:6px}
 .big{display:block;width:min(340px,90vw);padding:18px;border-radius:16px;border:2px solid var(--line);background:var(--panel);font-size:20px;font-weight:600}
+.big.main{border-color:var(--ok)}
 .big:focus,.big:hover{border-color:var(--blue);outline:none}
-#codeIn{width:min(340px,90vw);padding:16px;border-radius:14px;border:2px solid var(--line);background:#0f1219;color:var(--text);font-size:28px;text-align:center;letter-spacing:8px}
+#codeIn{width:min(340px,90vw);padding:14px;border-radius:14px;border:2px solid var(--line);background:#0f1219;color:var(--text);font-size:26px;text-align:center;letter-spacing:8px;-webkit-user-select:text;user-select:text}
 
 /* TV */
 #host{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#000}
@@ -31,13 +33,6 @@ button{font:inherit;color:inherit;cursor:pointer}
 #lobby .col{max-width:46vw}
 #homeBtn{position:fixed;top:12px;left:12px;z-index:50;padding:10px 16px;border-radius:12px;border:2px solid var(--line);background:var(--panel);font-size:16px}
 #homeBtn:focus,#homeBtn:hover{border-color:var(--blue);outline:none}
-@media (orientation:portrait){
- #lobby{flex-direction:column;justify-content:flex-start;overflow-y:auto;touch-action:pan-y;padding:64px 16px 24px;gap:16px}
- #lobby .col{max-width:100%;width:100%}
- #lobby h1{font-size:28px}#lobby .code{font-size:56px;letter-spacing:8px}
- #lobby ol,#romLine,#net,.chip,.tvbtn{font-size:16px}#lobby .url{font-size:13px}
- #qr{width:min(70vw,300px);height:min(70vw,300px);margin:0 auto;padding:12px}
-}
 #lobby h1{margin:0 0 1vh;font-size:5vh}
 #lobby .code{font-size:11vh;font-weight:800;letter-spacing:2vh;color:var(--ok);line-height:1}
 #lobby ol{color:var(--dim);font-size:2.6vh;padding-left:3vh;line-height:1.6}
@@ -52,33 +47,65 @@ button{font:inherit;color:inherit;cursor:pointer}
 .tvbtn:focus,.tvbtn:hover{border-color:var(--blue);outline:none}
 #romLine{font-size:2.4vh;margin-top:1vh}
 #net{font-size:2.2vh;color:var(--dim)}
+@media (orientation:portrait){
+ #lobby{flex-direction:column;justify-content:flex-start;overflow-y:auto;touch-action:pan-y;padding:64px 16px 24px;gap:16px}
+ #lobby .col{max-width:100%;width:100%}
+ #lobby h1{font-size:28px}#lobby .code{font-size:56px;letter-spacing:8px}
+ #lobby ol,#romLine,#net,.chip,.tvbtn{font-size:16px}#lobby .url{font-size:13px}
+ #qr{width:min(70vw,300px);height:min(70vw,300px);margin:0 auto;padding:12px}
+}
 
-/* CONTROLE */
-#padUI{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(circle at 50% 120%,#1b2030,#0b0d12 70%)}
-#bar{display:flex;align-items:center;gap:8px;padding:8px 12px;padding-top:max(8px,env(safe-area-inset-top));border-bottom:1px solid var(--line);font-size:14px}
-#dot{width:10px;height:10px;border-radius:50%;background:#555;flex:none}
-#dot.on{background:var(--ok)}
-#pStatus{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.sbtn{padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:13px}
-#ctrl{position:relative;flex:1;touch-action:none}
-#dpad{position:absolute;left:5vw;top:50%;transform:translateY(-50%);width:min(44vmin,190px);height:min(44vmin,190px)}
-#dpad .arm{position:absolute;background:#2a3142;border:1px solid #39425a}
-#dpad .h{left:0;right:0;top:33.3%;height:33.4%;border-radius:12px}
-#dpad .v{top:0;bottom:0;left:33.3%;width:33.4%;border-radius:12px}
-#dpad .cap{position:absolute;inset:33.3%;background:#2a3142}
-#dpad .ind{position:absolute;width:33.4%;height:33.4%;border-radius:10px;background:transparent;transition:background .05s}
-#dpad .ind.on{background:rgba(62,139,255,.55)}
-#iu{left:33.3%;top:0}#id{left:33.3%;bottom:0}#il{left:0;top:33.3%}#ir{right:0;top:33.3%}
-#abz{position:absolute;right:5vw;top:50%;transform:translateY(-50%) rotate(-20deg);display:flex;gap:min(5vmin,22px);align-items:center}
+/* barra de botões (controle e solo) */
+.bar{display:flex;align-items:center;gap:6px;padding:8px 10px;padding-top:max(8px,env(safe-area-inset-top));border-bottom:1px solid var(--line);font-size:14px}
+.dot{width:10px;height:10px;border-radius:50%;background:#555;flex:none}
+.dot.on{background:var(--ok)}
+.stat{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sbtn{padding:7px 10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);font-size:13px;flex:none}
+
+/* controle (gamepad) — usado no modo controle e no solo */
+.ctrl{position:relative;flex:1;touch-action:none}
+.dpad{position:absolute;left:5vw;top:50%;transform:translateY(-50%);width:min(44vmin,190px);height:min(44vmin,190px)}
+.dpad .arm{position:absolute;background:#2a3142;border:1px solid #39425a}
+.dpad .h{left:0;right:0;top:33.3%;height:33.4%;border-radius:12px}
+.dpad .v{top:0;bottom:0;left:33.3%;width:33.4%;border-radius:12px}
+.dpad .cap{position:absolute;inset:33.3%;background:#2a3142}
+.dpad .ind{position:absolute;width:33.4%;height:33.4%;border-radius:10px;background:transparent;transition:background .05s}
+.dpad .ind.on{background:rgba(62,139,255,.55)}
+.ind.u{left:33.3%;top:0}.ind.d{left:33.3%;bottom:0}.ind.l{left:0;top:33.3%}.ind.r{right:0;top:33.3%}
+.abz{position:absolute;right:5vw;top:50%;transform:translateY(-50%) rotate(-20deg);display:flex;gap:min(5vmin,22px);align-items:center}
 .ab{width:min(22vmin,96px);height:min(22vmin,96px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:min(7vmin,30px);border:3px solid rgba(255,255,255,.12);transform:rotate(20deg)}
 .ab[data-b="1"]{background:var(--b);color:#2a1a00}
 .ab[data-b="0"]{background:var(--a);color:#fff;margin-top:-10vmin}
-.ab.on,.mid.on{filter:brightness(1.5);transform:rotate(20deg) scale(.93)}
-#mids{position:absolute;left:50%;bottom:6vh;transform:translateX(-50%);display:flex;gap:16px}
+.ab.on{filter:brightness(1.5);transform:rotate(20deg) scale(.93)}
+.mids{position:absolute;left:50%;bottom:6vh;transform:translateX(-50%);display:flex;gap:16px}
 .mid{padding:10px 18px;border-radius:99px;background:#2a3142;border:1px solid #39425a;font-size:13px;letter-spacing:1px;color:var(--dim)}
-.mid.on{transform:scale(.93)}
-#rot{position:absolute;top:10px;left:50%;transform:translateX(-50%);color:var(--dim);font-size:12px}
-@media (orientation:landscape){#rot{display:none}}
+.mid.on{filter:brightness(1.5);transform:scale(.93)}
+.rot{position:absolute;top:10px;left:50%;transform:translateX(-50%);color:var(--dim);font-size:12px;white-space:nowrap}
+@media (orientation:landscape){.rot{display:none}}
+
+#padUI{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(circle at 50% 120%,#1b2030,#0b0d12 70%)}
+
+/* SOLO (jogar no celular) */
+#solo{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(circle at 50% 120%,#1b2030,#0b0d12 70%)}
+#soloView{position:relative;flex:none;background:#000;display:flex;align-items:center;justify-content:center}
+#soloScreen{width:100vw;height:calc(100vw*240/256);max-height:56vh;max-width:calc(56vh*256/240);image-rendering:pixelated;image-rendering:crisp-edges;background:#000;display:block}
+#soloEmpty{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--dim);font-size:15px;text-align:center;padding:16px}
+#soloEmpty .big{width:auto;font-size:17px;padding:14px 22px}
+#solo .ctrl .rot{display:none}
+@media (orientation:portrait){#solo .dpad{left:4vw;width:40vmin;height:40vmin}#solo .abz{right:4vw}#solo .ab{width:19vmin;height:19vmin}}
+@media (orientation:landscape){
+ #solo{display:block;background:#000}
+ #solo .bar{position:absolute;top:0;left:0;right:0;z-index:3;border:none;background:linear-gradient(#000c,#0000);padding:6px 10px}
+ #solo .bar .stat{opacity:.7}
+ #soloView{position:absolute;inset:0}
+ #soloScreen{height:100vh;width:calc(100vh*256/240);max-width:100vw;max-height:100vh}
+ #solo .ctrl{position:absolute;inset:0;z-index:2}
+ #solo .dpad{left:3vw;top:58%;opacity:.55}
+ #solo .abz{right:3vw;top:58%;opacity:.6}
+ #solo .mids{bottom:3vh;opacity:.55}
+ #solo .dpad .arm,#solo .dpad .cap{background:#3a4258}
+ #soloEmpty{z-index:4;background:#000}
+}
 </style>
 </head>
 <body>
@@ -87,10 +114,12 @@ button{font:inherit;color:inherit;cursor:pointer}
 <!-- Escolha -->
 <div id="choose" class="hidden">
   <h1>🎮 Leve Emu</h1>
-  <p>Emulador de NES — celulares viram controle</p>
-  <button class="big" id="beTV" autofocus>📺 Esta tela é a TV</button>
-  <input id="codeIn" inputmode="numeric" maxlength="4" placeholder="código">
-  <button class="big" id="bePad">📱 Usar como controle</button>
+  <p>Emulador de NES leve</p>
+  <button class="big main" id="beSolo">📱 Jogar neste celular</button>
+  <div class="sep">— ou jogar na TV com os celulares de controle —</div>
+  <button class="big" id="beTV">📺 Esta tela é a TV</button>
+  <input id="codeIn" inputmode="numeric" maxlength="4" placeholder="código da TV">
+  <button class="big" id="bePad">🎮 Usar como controle</button>
 </div>
 
 <!-- TV -->
@@ -124,23 +153,36 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 <!-- CONTROLE -->
 <div id="padUI" class="hidden">
-  <div id="bar">
-    <div id="dot"></div>
-    <div id="pStatus">Conectando…</div>
+  <div class="bar">
+    <div class="dot" id="dot"></div>
+    <div class="stat" id="pStatus">Conectando…</div>
     <label class="sbtn">🎮 Jogo<input type="file" id="filePad" accept=".nes,application/octet-stream" hidden></label>
     <button class="sbtn" data-cmd="save">💾</button>
     <button class="sbtn" data-cmd="load">⏪</button>
     <button class="sbtn" data-cmd="menu">☰</button>
+    <button class="sbtn" data-home>⟵</button>
   </div>
-  <div id="ctrl">
-    <div id="rot">Gire o celular para jogar melhor ↻</div>
-    <div id="dpad" data-b="dpad">
-      <div class="arm h"></div><div class="arm v"></div><div class="cap"></div>
-      <div class="ind" id="iu"></div><div class="ind" id="id"></div><div class="ind" id="il"></div><div class="ind" id="ir"></div>
+  <div class="ctrl" id="padCtrl"></div>
+</div>
+
+<!-- SOLO -->
+<div id="solo" class="hidden">
+  <div class="bar">
+    <div class="stat" id="soloStat">Leve Emu</div>
+    <label class="sbtn">📂<input type="file" id="fileSolo" accept=".nes,application/octet-stream" hidden></label>
+    <button class="sbtn" id="soloSave">💾</button>
+    <button class="sbtn" id="soloLoad">⏪</button>
+    <button class="sbtn" id="soloPause">⏸</button>
+    <button class="sbtn" data-home>⟵</button>
+  </div>
+  <div id="soloView">
+    <canvas id="soloScreen" width="256" height="240"></canvas>
+    <div id="soloEmpty">
+      <div>Nenhum jogo aberto</div>
+      <label class="big">📂 Escolher jogo (.nes)<input type="file" id="fileSolo2" accept=".nes,application/octet-stream" hidden></label>
     </div>
-    <div id="mids"><div class="mid" data-b="2">SELECT</div><div class="mid" data-b="3">START</div></div>
-    <div id="abz"><div class="ab" data-b="1">B</div><div class="ab" data-b="0">A</div></div>
   </div>
+  <div class="ctrl" id="soloCtrl"></div>
 </div>
 
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
@@ -155,27 +197,30 @@ const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},se
 let toastT;
 function toast(msg,ms){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),ms||2600)}
 function baseURL(){return location.origin+location.pathname}
+function goHome(){store.del('levemu-role');location.href=baseURL()}
+document.querySelectorAll('[data-home]').forEach(b=>b.onclick=goHome);
+function u8ToBin(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return s}
+function binToU8(b){const u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u}
+async function fileToRom(f){return {u8:new Uint8Array(await f.arrayBuffer()),name:f.name.replace(/\.nes$/i,'')}}
 
 /* ---------- roteamento ---------- */
 const joinCode=qs.get('join');
 if(joinCode) startPad(joinCode);
 else if(qs.has('inicio')){store.del('levemu-role');history.replaceState(null,'',baseURL());showChooser()}
 else if(qs.has('tv')||store.get('levemu-role')==='tv') startHost();
+else if(qs.has('solo')||store.get('levemu-role')==='solo') startSolo();
 else showChooser();
 function showChooser(){
   $('choose').classList.remove('hidden');
+  $('beSolo').onclick=()=>{store.set('levemu-role','solo');$('choose').classList.add('hidden');startSolo()};
   $('beTV').onclick=()=>{store.set('levemu-role','tv');startHost()};
   $('bePad').onclick=()=>{const c=$('codeIn').value.trim();if(!/^\d{4}$/.test(c))return toast('Digite o código de 4 números da TV');location.href=baseURL()+'?join='+c};
 }
 
-/* =================== TV / HOST =================== */
-function startHost(){
-  $('choose').classList.add('hidden');$('host').classList.remove('hidden');
-  if(typeof jsnes==='undefined'){toast('Não carregou o emulador — precisa de internet na primeira vez',8000);return}
-  const cv=$('screen'),ctx=cv.getContext('2d');
-  const img=ctx.createImageData(256,240);
-  const buf32=new Uint32Array(img.data.buffer);
-  // áudio
+/* =================== NÚCLEO DO EMULADOR (TV e solo) =================== */
+function makeEmu(canvas){
+  if(typeof jsnes==='undefined'){toast('Não carregou o emulador — precisa de internet na primeira vez',8000);return null}
+  const ctx=canvas.getContext('2d'),img=ctx.createImageData(256,240),buf32=new Uint32Array(img.data.buffer);
   const SAMPLES=8192,MASK=SAMPLES-1,aL=new Float32Array(SAMPLES),aR=new Float32Array(SAMPLES);
   let wPos=0,rPos=0,audioCtx=null;
   try{
@@ -183,78 +228,158 @@ function startHost(){
     const sp=audioCtx.createScriptProcessor(1024,0,2);
     sp.onaudioprocess=e=>{
       const L=e.outputBuffer.getChannelData(0),R=e.outputBuffer.getChannelData(1);
-      for(let i=0;i<L.length;i++){
-        if(rPos!==wPos){L[i]=aL[rPos];R[i]=aR[rPos];rPos=(rPos+1)&MASK}else{L[i]=R[i]=0}
-      }
+      for(let i=0;i<L.length;i++){if(rPos!==wPos){L[i]=aL[rPos];R[i]=aR[rPos];rPos=(rPos+1)&MASK}else{L[i]=R[i]=0}}
     };
     sp.connect(audioCtx.destination);
   }catch(e){audioCtx=null}
-  function wakeAudio(){if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{})}
   const nes=new jsnes.NES({
     sampleRate:audioCtx?audioCtx.sampleRate:44100,
     onFrame(fb){for(let i=0;i<61440;i++)buf32[i]=0xFF000000|fb[i]},
     onAudioSample(l,r){const n=(wPos+1)&MASK;if(n===rPos)return;aL[wPos]=l;aR[wPos]=r;wPos=n}
   });
-
-  let romName=null,running=false,menuOpen=true;
+  const emu={nes,romName:null,paused:false,applied:[0,0],memState:null};
   const FRAME=1000/60.0988;let last=0,acc=0;
   function loop(t){
     requestAnimationFrame(loop);
-    if(!running||menuOpen){last=t;return}
+    if(!emu.romName||emu.paused){last=t;return}
     let dt=t-last;last=t;if(dt>100)dt=100;acc+=dt;
     let n=0;
     while(acc>=FRAME&&n<4){nes.frame();acc-=FRAME;n++}
-    // se o áudio está acabando, roda um quadro extra para não estalar
-    if(n&&audioCtx&&((wPos-rPos)&MASK)<1024&&n<4)nes.frame();
+    if(n&&audioCtx&&audioCtx.state==='running'&&((wPos-rPos)&MASK)<1024&&n<4)nes.frame();
     if(n)ctx.putImageData(img,0,0);
   }
   requestAnimationFrame(loop);
-
-  function u8ToBin(u8){let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return s}
-  function loadRom(u8,name,silent){
+  emu.wakeAudio=()=>{if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{})};
+  emu.audioOn=()=>!audioCtx||audioCtx.state==='running';
+  emu.load=(u8,name)=>{
     if(!(u8[0]===0x4E&&u8[1]===0x45&&u8[2]===0x53)){toast('Esse arquivo não é um jogo de NES (.nes)');return false}
     try{nes.loadROM(u8ToBin(u8))}catch(e){toast('Esse jogo não é compatível: '+e.message,5000);return false}
-    romName=name||'jogo';running=true;wPos=rPos=0;
-    for(let p=0;p<2;p++){padApplied[p]=0}
-    $('romLine').textContent='🎮 '+romName;
-    if(u8.length<1500000)store.set('levemu-rom',JSON.stringify({n:romName,d:btoa(u8ToBin(u8))}));
-    broadcast({t:'state',rom:romName});
-    if(!silent){closeMenu();toast('Carregado: '+romName)}
+    emu.romName=name||'jogo';emu.applied=[0,0];wPos=rPos=0;
+    if(u8.length<1500000)store.set('levemu-rom',JSON.stringify({n:emu.romName,d:btoa(u8ToBin(u8))}));
+    return true;
+  };
+  emu.loadLast=()=>{try{const r=JSON.parse(store.get('levemu-rom')||'null');if(r)return emu.load(binToU8(atob(r.d)),r.n)}catch(e){}return false};
+  emu.setPad=(p,m)=>{
+    const ch=emu.applied[p]^m;if(!ch)return;
+    if(emu.romName)for(let b=0;b<8;b++)if(ch&(1<<b)){if(m&(1<<b))nes.buttonDown(p+1,b);else nes.buttonUp(p+1,b)}
+    emu.applied[p]=m;
+  };
+  emu.save=()=>{if(!emu.romName)return;try{const s=JSON.stringify(nes.toJSON());emu.memState=s;store.set('levemu-st-'+emu.romName,s);toast('💾 Jogo salvo')}catch(e){toast('Não deu para salvar')}};
+  emu.loadState=()=>{if(!emu.romName)return;const s=store.get('levemu-st-'+emu.romName)||emu.memState;if(!s)return toast('Nenhum save ainda');try{nes.fromJSON(JSON.parse(s));toast('⏪ Save carregado')}catch(e){toast('Save inválido')}};
+  return emu;
+}
+
+/* =================== GAMEPAD DE TOQUE (controle e solo) =================== */
+function makeTouchPad(root,onMask){
+  root.innerHTML='<div class="rot">Gire o celular para jogar melhor ↻</div>'+
+    '<div class="dpad"><div class="arm h"></div><div class="arm v"></div><div class="cap"></div>'+
+    '<div class="ind u"></div><div class="ind d"></div><div class="ind l"></div><div class="ind r"></div></div>'+
+    '<div class="mids"><div class="mid" data-b="2">SELECT</div><div class="mid" data-b="3">START</div></div>'+
+    '<div class="abz"><div class="ab" data-b="1">B</div><div class="ab" data-b="0">A</div></div>';
+  const dpad=root.querySelector('.dpad'),dpadTouches=new Set();
+  const vis=[['u',4],['d',5],['l',6],['r',7]].map(([c,b])=>[root.querySelector('.ind.'+c),b]);
+  const btns=[...root.querySelectorAll('[data-b]')];
+  let mask=0,firstTouch=true;
+  function dirMask(x,y){
+    const r=dpad.getBoundingClientRect(),dx=x-(r.left+r.width/2),dy=y-(r.top+r.height/2);
+    if(Math.hypot(dx,dy)<r.width*0.12)return 0;
+    const a=Math.atan2(dy,dx)*180/Math.PI;let m=0;
+    if(a>-67.5&&a<67.5)m|=1<<7;if(a>22.5&&a<157.5)m|=1<<5;if(a>112.5||a<-112.5)m|=1<<6;if(a>-157.5&&a<-22.5)m|=1<<4;
+    return m;
+  }
+  function onTouch(e){
+    e.preventDefault();
+    if(firstTouch){firstTouch=false;pad.onFirst&&pad.onFirst();
+      try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(x){}
+      try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(x){}}
+    if(e.type==='touchstart')for(const t of e.changedTouches){const el=document.elementFromPoint(t.clientX,t.clientY);if(el&&el.closest('.dpad')===dpad)dpadTouches.add(t.identifier)}
+    if(e.type==='touchend'||e.type==='touchcancel')for(const t of e.changedTouches)dpadTouches.delete(t.identifier);
+    let m=0;
+    for(const t of e.touches){
+      if(dpadTouches.has(t.identifier)){m|=dirMask(t.clientX,t.clientY);continue}
+      const el=document.elementFromPoint(t.clientX,t.clientY),z=el&&el.closest('[data-b]');
+      if(z&&root.contains(z))m|=1<<(+z.dataset.b);
+    }
+    set(m);
+  }
+  function set(m){
+    if(m===mask)return;
+    if(m&~mask)try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
+    mask=m;onMask(m);
+    for(const [el,b] of vis)el.classList.toggle('on',!!(m&(1<<b)));
+    for(const el of btns)el.classList.toggle('on',!!(m&(1<<(+el.dataset.b))));
+  }
+  ['touchstart','touchmove','touchend','touchcancel'].forEach(ev=>root.addEventListener(ev,onTouch,{passive:false}));
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)set(0)});
+  const pad={get mask(){return mask},release(){set(0)},onFirst:null};
+  return pad;
+}
+
+/* =================== SOLO (jogar no celular) =================== */
+function startSolo(){
+  $('solo').classList.remove('hidden');
+  const emu=makeEmu($('soloScreen'));if(!emu)return;
+  const pad=makeTouchPad($('soloCtrl'),m=>emu.setPad(0,m));
+  pad.onFirst=emu.wakeAudio;
+  function showRom(){
+    $('soloEmpty').classList.toggle('hidden',!!emu.romName);
+    $('soloStat').textContent=emu.romName?'🎮 '+emu.romName:'Leve Emu';
+  }
+  async function pick(e){
+    const f=e.target.files[0];e.target.value='';if(!f)return;
+    emu.wakeAudio();
+    const r=await fileToRom(f);
+    if(emu.load(r.u8,r.name)){emu.paused=false;$('soloPause').textContent='⏸';toast('Carregado: '+r.name)}
+    showRom();
+  }
+  $('fileSolo').onchange=pick;$('fileSolo2').onchange=pick;
+  $('soloSave').onclick=emu.save;
+  $('soloLoad').onclick=emu.loadState;
+  $('soloPause').onclick=()=>{if(!emu.romName)return;emu.paused=!emu.paused;$('soloPause').textContent=emu.paused?'▶':'⏸';emu.wakeAudio()};
+  addEventListener('pointerdown',emu.wakeAudio);
+  // pausa sozinho ao sair do app
+  document.addEventListener('visibilitychange',()=>{if(document.hidden&&emu.romName){emu.paused=true;$('soloPause').textContent='▶'}});
+  // teclado/controle físico (Bluetooth) também funciona
+  const KEYS={ArrowUp:4,ArrowDown:5,ArrowLeft:6,ArrowRight:7,KeyX:0,KeyZ:1,Enter:3,ShiftRight:2,Space:2};
+  let kb=0;
+  addEventListener('keydown',e=>{const b=KEYS[e.code];if(b===undefined)return;e.preventDefault();emu.wakeAudio();kb|=1<<b;emu.setPad(0,kb|pad.mask)});
+  addEventListener('keyup',e=>{const b=KEYS[e.code];if(b===undefined)return;kb&=~(1<<b);emu.setPad(0,kb|pad.mask)});
+  emu.loadLast();showRom();
+  if(emu.romName)toast('Toque na tela para ligar o som',3000);
+}
+
+/* =================== TV / HOST =================== */
+function startHost(){
+  $('choose').classList.add('hidden');$('host').classList.remove('hidden');
+  const emu=makeEmu($('screen'));if(!emu)return;
+  emu.paused=true;// menu aberto
+  const phone=[0,0];let kb=0;
+  function applyPad(p){emu.setPad(p,phone[p]|(p===0?kb:0))}
+  function loadRom(u8,name,silent){
+    if(!emu.load(u8,name))return false;
+    $('romLine').textContent='🎮 '+emu.romName;
+    broadcast({t:'state',rom:emu.romName});
+    if(!silent){closeMenu();toast('Carregado: '+emu.romName)}
     return true;
   }
-  // último jogo usado
-  try{const r=JSON.parse(store.get('levemu-rom')||'null');if(r){const b=atob(r.d),u=new Uint8Array(b.length);for(let i=0;i<b.length;i++)u[i]=b.charCodeAt(i);loadRom(u,r.n,true)}}catch(e){}
-
-  function openMenu(){menuOpen=true;$('lobby').classList.remove('hidden');setTimeout(()=>$('playBtn').focus(),50)}
-  function closeMenu(){if(!romName){toast('Envie um jogo pelo celular primeiro');return}wakeAudio();menuOpen=false;$('lobby').classList.add('hidden');if(audioCtx&&audioCtx.state!=='running')toast('Aperte OK no controle remoto para ligar o som',4000)}
-  $('playBtn').onclick=()=>{wakeAudio();closeMenu()};
-  function goHome(){store.del('levemu-role');location.href=baseURL()}
+  function openMenu(){emu.paused=true;$('lobby').classList.remove('hidden');setTimeout(()=>$('playBtn').focus(),50)}
+  function closeMenu(){if(!emu.romName){toast('Envie um jogo pelo celular primeiro');return}emu.wakeAudio();emu.paused=false;$('lobby').classList.add('hidden');if(!emu.audioOn())toast('Aperte OK no controle remoto para ligar o som',4000)}
+  const menuOpen=()=>!$('lobby').classList.contains('hidden');
+  $('playBtn').onclick=()=>{emu.wakeAudio();closeMenu()};
   $('swapRole').onclick=goHome;$('homeBtn').onclick=goHome;
   $('fileLbl').onkeydown=e=>{if(e.key==='Enter')$('fileTV').click()};
-  $('fileTV').onchange=async e=>{const f=e.target.files[0];if(f)loadRom(new Uint8Array(await f.arrayBuffer()),f.name.replace(/\.nes$/i,''))};
+  $('fileTV').onchange=async e=>{const f=e.target.files[0];if(f){const r=await fileToRom(f);loadRom(r.u8,r.name)}};
   setTimeout(()=>$('playBtn').focus(),100);
 
-  // save states
-  let memState=null;
-  function saveState(){if(!romName)return;try{const s=JSON.stringify(nes.toJSON());memState=s;store.set('levemu-st-'+romName,s);toast('💾 Jogo salvo')}catch(e){toast('Não deu para salvar')}}
-  function loadState(){if(!romName)return;const s=store.get('levemu-st-'+romName)||memState;if(!s)return toast('Nenhum save ainda');try{nes.fromJSON(JSON.parse(s));toast('⏪ Save carregado')}catch(e){toast('Save inválido')}}
-
-  // entradas
-  const phone=[0,0],padApplied=[0,0];let kb=0;
-  function applyPad(p){
-    const m=phone[p]|(p===0?kb:0),ch=padApplied[p]^m;if(!ch)return;
-    if(romName)for(let b=0;b<8;b++)if(ch&(1<<b)){if(m&(1<<b))nes.buttonDown(p+1,b);else nes.buttonUp(p+1,b)}
-    padApplied[p]=m;
-  }
   const KEYS={ArrowUp:4,ArrowDown:5,ArrowLeft:6,ArrowRight:7,KeyX:0,KeyZ:1,Enter:3,ShiftRight:2,Space:2};
   addEventListener('keydown',e=>{
-    wakeAudio();
-    if(e.key==='Escape'||e.key==='Backspace'||e.key==='GoBack'||e.keyCode===461){e.preventDefault();menuOpen?closeMenu():openMenu();return}
-    if(menuOpen)return;
+    emu.wakeAudio();
+    if(e.key==='Escape'||e.key==='Backspace'||e.key==='GoBack'||e.keyCode===461){e.preventDefault();menuOpen()?closeMenu():openMenu();return}
+    if(menuOpen())return;
     const b=KEYS[e.code];if(b===undefined)return;e.preventDefault();kb|=1<<b;applyPad(0);
   });
   addEventListener('keyup',e=>{const b=KEYS[e.code];if(b===undefined)return;kb&=~(1<<b);applyPad(0)});
-  addEventListener('pointerdown',wakeAudio);
+  addEventListener('pointerdown',emu.wakeAudio);
 
   // rede
   let code=store.get('levemu-code');if(!/^\d{4}$/.test(code||''))code=newCode();
@@ -282,7 +407,7 @@ function startHost(){
   function onConn(c){
     c.on('open',()=>{
       conns.add(c);const s=slots.indexOf(null);c.slot=s;if(s>=0)slots[s]=c;
-      c.send({t:'hello',slot:s,rom:romName});renderPlayers();
+      c.send({t:'hello',slot:s,rom:emu.romName});renderPlayers();
       toast(s>=0?'📱 Jogador '+(s+1)+' conectou':'📱 Celular na fila (NES aceita 2 jogadores)');
     });
     c.on('data',d=>handle(c,d));
@@ -292,18 +417,18 @@ function startHost(){
     if(!conns.has(c))return;conns.delete(c);
     if(c.slot>=0){
       const s=c.slot;slots[s]=null;phone[s]=0;applyPad(s);
-      for(const o of conns)if(o.slot<0){o.slot=s;slots[s]=o;o.send({t:'hello',slot:s,rom:romName});break}
+      for(const o of conns)if(o.slot<0){o.slot=s;slots[s]=o;o.send({t:'hello',slot:s,rom:emu.romName});break}
     }
     renderPlayers();
   }
   function handle(c,d){
     if(!d||typeof d!=='object')return;
     if(d.t==='p'){if(c.slot>=0){phone[c.slot]=d.m&255;applyPad(c.slot)}}
-    else if(d.t==='rom'){const u=d.data instanceof ArrayBuffer?new Uint8Array(d.data):new Uint8Array(d.data.buffer||d.data);if(loadRom(u,String(d.name||'jogo').slice(0,60)))c.send({t:'ok',msg:'Jogo aberto na TV'});else c.send({t:'ok',msg:'A TV não conseguiu abrir esse jogo'})}
+    else if(d.t==='rom'){const u=d.data instanceof ArrayBuffer?new Uint8Array(d.data):new Uint8Array(d.data.buffer||d.data);c.send({t:'ok',msg:loadRom(u,String(d.name||'jogo').slice(0,60))?'Jogo aberto na TV':'A TV não conseguiu abrir esse jogo'})}
     else if(d.t==='cmd'){
-      if(d.c==='save')saveState();else if(d.c==='load')loadState();
-      else if(d.c==='menu')menuOpen?closeMenu():openMenu();
-      wakeAudio();
+      if(d.c==='save')emu.save();else if(d.c==='load')emu.loadState();
+      else if(d.c==='menu')menuOpen()?closeMenu():openMenu();
+      emu.wakeAudio();
     }
   }
   function broadcast(m){for(const c of conns)try{c.send(m)}catch(e){}}
@@ -311,15 +436,18 @@ function startHost(){
     const wait=[...conns].filter(c=>c.slot<0).length;
     $('players').innerHTML=slots.map((s,i)=>'<div class="chip'+(s?' on':'')+'">'+(s?'🟢':'⚪')+' Jogador '+(i+1)+'</div>').join('')+(wait?'<div class="chip">+'+wait+' na fila</div>':'');
   }
+  if(emu.loadLast())$('romLine').textContent='🎮 '+emu.romName;
   renderPlayers();startPeer();
 }
 
-/* =================== CONTROLE =================== */
+/* =================== CONTROLE (celular → TV) =================== */
 function startPad(code){
   $('padUI').classList.remove('hidden');
   const st=$('pStatus'),dot=$('dot');
-  let conn=null,peer=null,slot=-1,mask=0,reconnecting=false;
+  let conn=null,peer=null,slot=-1,reconnecting=false;
   function status(t,on){st.textContent=t;dot.classList.toggle('on',!!on)}
+  function send(m){if(conn&&conn.open)try{conn.send(m)}catch(e){}}
+  const pad=makeTouchPad($('padCtrl'),m=>send({t:'p',m}));
   if(typeof Peer==='undefined'){status('Sem internet para conectar');return}
   function connect(){
     reconnecting=false;
@@ -327,7 +455,7 @@ function startPad(code){
     if(!peer.open)return;
     status('Procurando a TV '+code+'…');
     conn=peer.connect(PREFIX+code,{reliable:true});
-    conn.on('open',()=>{status('Conectado',true);send({t:'p',m:mask})});
+    conn.on('open',()=>{status('Conectado',true);send({t:'p',m:pad.mask})});
     conn.on('data',d=>{
       if(d.t==='hello'){slot=d.slot;status(slot>=0?'Jogador '+(slot+1)+(d.rom?' · '+d.rom:' · envie um jogo'):'Na fila — espere uma vaga',true)}
       else if(d.t==='state'){if(slot>=0)status('Jogador '+(slot+1)+' · '+d.rom,true)}
@@ -338,9 +466,6 @@ function startPad(code){
   function retry(){if(reconnecting)return;reconnecting=true;status('Desconectado — reconectando…');setTimeout(connect,1500)}
   function onErr(e){if(e.type==='peer-unavailable'){status('TV '+code+' não encontrada — ela está aberta?');reconnecting=false;retry()}else if(e.type!=='unavailable-id'){retry()}}
   connect();
-  function send(m){if(conn&&conn.open)try{conn.send(m)}catch(e){}}
-
-  // botões de cima
   document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>send({t:'cmd',c:b.dataset.cmd}));
   $('filePad').onchange=async e=>{
     const f=e.target.files[0];e.target.value='';if(!f)return;
@@ -348,40 +473,6 @@ function startPad(code){
     if(!conn||!conn.open)return toast('Ainda não conectado na TV');
     toast('Enviando '+f.name+'…');send({t:'rom',name:f.name.replace(/\.nes$/i,''),data:await f.arrayBuffer()});
   };
-
-  // toque multi-dedo
-  const ctrl=$('ctrl'),dpad=$('dpad');
-  const dpadTouches=new Set();let firstTouch=true;
-  function dirMask(x,y){
-    const r=dpad.getBoundingClientRect(),dx=x-(r.left+r.width/2),dy=y-(r.top+r.height/2);
-    if(Math.hypot(dx,dy)<r.width*0.12)return 0;
-    const a=Math.atan2(dy,dx)*180/Math.PI;let m=0;
-    if(a>-67.5&&a<67.5)m|=1<<7;if(a>22.5&&a<157.5)m|=1<<5;if(a>112.5||a<-112.5)m|=1<<6;if(a>-157.5&&a<-22.5)m|=1<<4;
-    return m;
-  }
-  function onTouch(e){
-    e.preventDefault();
-    if(firstTouch){firstTouch=false;try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().then(()=>screen.orientation&&screen.orientation.lock&&screen.orientation.lock('landscape').catch(()=>{})).catch(()=>{})}catch(x){}try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(x){}}
-    if(e.type==='touchstart')for(const t of e.changedTouches){const el=document.elementFromPoint(t.clientX,t.clientY);if(el&&el.closest('#dpad'))dpadTouches.add(t.identifier)}
-    if(e.type==='touchend'||e.type==='touchcancel')for(const t of e.changedTouches)dpadTouches.delete(t.identifier);
-    let m=0;
-    for(const t of e.touches){
-      if(dpadTouches.has(t.identifier)){m|=dirMask(t.clientX,t.clientY);continue}
-      const el=document.elementFromPoint(t.clientX,t.clientY),z=el&&el.closest('[data-b]');
-      if(z&&z.dataset.b!=='dpad')m|=1<<(+z.dataset.b);
-    }
-    setMask(m);
-  }
-  ['touchstart','touchmove','touchend','touchcancel'].forEach(ev=>ctrl.addEventListener(ev,onTouch,{passive:false}));
-  const vis=[['iu',4],['id',5],['il',6],['ir',7]];
-  function setMask(m){
-    if(m===mask)return;
-    if(m&~mask)try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
-    mask=m;send({t:'p',m});
-    for(const [id,b] of vis)$(id).classList.toggle('on',!!(m&(1<<b)));
-    document.querySelectorAll('.ab,.mid').forEach(el=>el.classList.toggle('on',!!(m&(1<<(+el.dataset.b)))));
-  }
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)setMask(0)});
 }
 </script>
 </body>
