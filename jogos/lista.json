@@ -1,0 +1,6 @@
+{
+  "jogos": [
+    { "nome": "Concentration Room", "arquivo": "concentration-room.nes", "sistema": "nes", "descricao": "jogo da memória · 1-2 jogadores" },
+    { "nome": "LJ65", "arquivo": "lj65.nes", "sistema": "nes", "descricao": "blocos caindo · 1-2 jogadores" }
+  ]
+}
