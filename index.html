@@ -138,9 +138,11 @@ button{font:inherit;color:inherit;cursor:pointer}
       </ol>
       <div id="players"></div>
       <div id="romLine">Nenhum jogo carregado</div>
+      <div id="speedLine" style="font-size:2.2vh;color:var(--dim)"></div>
       <div class="row">
         <button class="tvbtn" id="playBtn">▶ Jogar / ativar som</button>
         <label class="tvbtn" tabindex="0" id="fileLbl">📁 Abrir .nes aqui<input type="file" id="fileTV" accept=".nes,application/octet-stream" hidden></label>
+        <button class="tvbtn" id="soundTV">🔊 Som</button>
         <button class="tvbtn" id="swapRole">⟵ Voltar ao início</button>
       </div>
     </div>
@@ -159,6 +161,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <label class="sbtn">🎮 Jogo<input type="file" id="filePad" accept=".nes,application/octet-stream" hidden></label>
     <button class="sbtn" data-cmd="save">💾</button>
     <button class="sbtn" data-cmd="load">⏪</button>
+    <button class="sbtn" data-cmd="sound">🔊</button>
     <button class="sbtn" data-cmd="menu">☰</button>
     <button class="sbtn" data-home>⟵</button>
   </div>
@@ -172,6 +175,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <label class="sbtn">📂<input type="file" id="fileSolo" accept=".nes,application/octet-stream" hidden></label>
     <button class="sbtn" id="soloSave">💾</button>
     <button class="sbtn" id="soloLoad">⏪</button>
+    <button class="sbtn" id="soloSound">🔊</button>
     <button class="sbtn" id="soloPause">⏸</button>
     <button class="sbtn" data-home>⟵</button>
   </div>
@@ -222,39 +226,49 @@ function makeEmu(canvas){
   if(typeof jsnes==='undefined'){toast('Não carregou o emulador — precisa de internet na primeira vez',8000);return null}
   const ctx=canvas.getContext('2d'),img=ctx.createImageData(256,240),buf32=new Uint32Array(img.data.buffer);
   const SAMPLES=8192,MASK=SAMPLES-1,aL=new Float32Array(SAMPLES),aR=new Float32Array(SAMPLES);
-  let wPos=0,rPos=0,audioCtx=null;
+  let wPos=0,rPos=0,audioCtx=null,primed=false,wantDraw=true;
   try{
     audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-    const sp=audioCtx.createScriptProcessor(1024,0,2);
+    const sp=audioCtx.createScriptProcessor(4096,0,2);
     sp.onaudioprocess=e=>{
       const L=e.outputBuffer.getChannelData(0),R=e.outputBuffer.getChannelData(1);
-      for(let i=0;i<L.length;i++){if(rPos!==wPos){L[i]=aL[rPos];R[i]=aR[rPos];rPos=(rPos+1)&MASK}else{L[i]=R[i]=0}}
+      const have=(wPos-rPos)&MASK;
+      if(!primed&&have>=3072)primed=true;
+      for(let i=0;i<L.length;i++){
+        if(primed&&rPos!==wPos){L[i]=aL[rPos];R[i]=aR[rPos];rPos=(rPos+1)&MASK}
+        else{L[i]=R[i]=0;primed=false}
+      }
     };
     sp.connect(audioCtx.destination);
   }catch(e){audioCtx=null}
   const nes=new jsnes.NES({
     sampleRate:audioCtx?audioCtx.sampleRate:44100,
-    onFrame(fb){for(let i=0;i<61440;i++)buf32[i]=0xFF000000|fb[i]},
-    onAudioSample(l,r){const n=(wPos+1)&MASK;if(n===rPos)return;aL[wPos]=l;aR[wPos]=r;wPos=n}
+    onFrame(fb){if(!wantDraw)return;for(let i=0;i<61440;i++)buf32[i]=0xFF000000|fb[i]},
+    onAudioSample(l,r){if(((wPos-rPos)&MASK)>6144)return;aL[wPos]=l;aR[wPos]=r;wPos=(wPos+1)&MASK}
   });
-  const emu={nes,romName:null,paused:false,applied:[0,0],memState:null};
-  const FRAME=1000/60.0988;let last=0,acc=0;
+  const emu={nes,romName:null,paused:false,applied:[0,0],memState:null,speed:100};
+  const FRAME=1000/60.0988;let last=0,acc=0,fCount=0,fT=0;
   function loop(t){
     requestAnimationFrame(loop);
-    if(!emu.romName||emu.paused){last=t;return}
-    let dt=t-last;last=t;if(dt>100)dt=100;acc+=dt;
+    if(!emu.romName||emu.paused){last=t;fT=t;fCount=0;return}
+    let dt=t-last;last=t;if(dt>250)dt=FRAME;acc+=dt;
+    if(acc>FRAME*3)acc=FRAME*2; // aparelho lento: desacelera em vez de acumular atraso
     let n=0;
-    while(acc>=FRAME&&n<4){nes.frame();acc-=FRAME;n++}
-    if(n&&audioCtx&&audioCtx.state==='running'&&((wPos-rPos)&MASK)<1024&&n<4)nes.frame();
+    while(acc>=FRAME&&n<2){acc-=FRAME;n++;wantDraw=(acc<FRAME||n===2);nes.frame();fCount++}
     if(n)ctx.putImageData(img,0,0);
+    if(document.hidden){fT=t;fCount=0}
+    else if(t-fT>=1000){emu.speed=Math.round(fCount*1000/(t-fT)/60.1*100);fCount=0;fT=t;emu.onSpeed&&emu.onSpeed(emu.speed)}
   }
   requestAnimationFrame(loop);
+  emu.sound=store.get('levemu-sound')!=='0';
+  nes.opts.emulateSound=emu.sound;
+  emu.toggleSound=()=>{emu.sound=!emu.sound;nes.opts.emulateSound=emu.sound;store.set('levemu-sound',emu.sound?'1':'0');wPos=rPos=0;primed=false;toast(emu.sound?'🔊 Som ligado':'🔇 Som desligado (mais leve)');return emu.sound};
   emu.wakeAudio=()=>{if(audioCtx&&audioCtx.state!=='running')audioCtx.resume().catch(()=>{})};
   emu.audioOn=()=>!audioCtx||audioCtx.state==='running';
   emu.load=(u8,name)=>{
     if(!(u8[0]===0x4E&&u8[1]===0x45&&u8[2]===0x53)){toast('Esse arquivo não é um jogo de NES (.nes)');return false}
     try{nes.loadROM(u8ToBin(u8))}catch(e){toast('Esse jogo não é compatível: '+e.message,5000);return false}
-    emu.romName=name||'jogo';emu.applied=[0,0];wPos=rPos=0;
+    emu.romName=name||'jogo';emu.applied=[0,0];wPos=rPos=0;primed=false;
     if(u8.length<1500000)store.set('levemu-rom',JSON.stringify({n:emu.romName,d:btoa(u8ToBin(u8))}));
     return true;
   };
@@ -266,6 +280,7 @@ function makeEmu(canvas){
   };
   emu.save=()=>{if(!emu.romName)return;try{const s=JSON.stringify(nes.toJSON());emu.memState=s;store.set('levemu-st-'+emu.romName,s);toast('💾 Jogo salvo')}catch(e){toast('Não deu para salvar')}};
   emu.loadState=()=>{if(!emu.romName)return;const s=store.get('levemu-st-'+emu.romName)||emu.memState;if(!s)return toast('Nenhum save ainda');try{nes.fromJSON(JSON.parse(s));toast('⏪ Save carregado')}catch(e){toast('Save inválido')}};
+  window.levemu=emu;
   return emu;
 }
 
@@ -334,6 +349,7 @@ function startSolo(){
   }
   $('fileSolo').onchange=pick;$('fileSolo2').onchange=pick;
   $('soloSave').onclick=emu.save;
+  const sl=()=>{$('soloSound').textContent=emu.sound?'🔊':'🔇'};sl();$('soloSound').onclick=()=>{emu.toggleSound();emu.wakeAudio();sl()};
   $('soloLoad').onclick=emu.loadState;
   $('soloPause').onclick=()=>{if(!emu.romName)return;emu.paused=!emu.paused;$('soloPause').textContent=emu.paused?'▶':'⏸';emu.wakeAudio()};
   addEventListener('pointerdown',emu.wakeAudio);
@@ -367,6 +383,11 @@ function startHost(){
   const menuOpen=()=>!$('lobby').classList.contains('hidden');
   $('playBtn').onclick=()=>{emu.wakeAudio();closeMenu()};
   $('swapRole').onclick=goHome;$('homeBtn').onclick=goHome;
+  const sndLbl=()=>{$('soundTV').textContent=emu.sound?'🔊 Som: ligado':'🔇 Som: desligado'};sndLbl();
+  $('soundTV').onclick=()=>{emu.toggleSound();sndLbl()};
+  let slowWarned=false;
+  emu.onSpeed=v=>{$('speedLine').textContent='Velocidade do emulador: '+v+'%';broadcast({t:'speed',v});
+    if(v<85&&!slowWarned&&emu.sound){slowWarned=true;toast('A TV está lenta — desligar o som (🔊) deixa mais rápido',5000)}};
   $('fileLbl').onkeydown=e=>{if(e.key==='Enter')$('fileTV').click()};
   $('fileTV').onchange=async e=>{const f=e.target.files[0];if(f){const r=await fileToRom(f);loadRom(r.u8,r.name)}};
   setTimeout(()=>$('playBtn').focus(),100);
@@ -424,11 +445,13 @@ function startHost(){
   }
   function handle(c,d){
     if(!d||typeof d!=='object')return;
-    if(d.t==='p'){if(c.slot>=0){phone[c.slot]=d.m&255;if(d.m&&menuOpen()){if(emu.romName)closeMenu();else toast('Envie um jogo pelo celular (botão 🎮 Jogo)')}applyPad(c.slot)}}
+    if(d.t==='hb'&&typeof d.m==='number'&&c.slot>=0&&phone[c.slot]!==(d.m&255)){phone[c.slot]=d.m&255;applyPad(c.slot)}
+    else if(d.t==='p'){if(c.slot>=0){phone[c.slot]=d.m&255;if(d.m&&menuOpen()){if(emu.romName)closeMenu();else toast('Envie um jogo pelo celular (botão 🎮 Jogo)')}applyPad(c.slot)}}
     else if(d.t==='rom'){const u=d.data instanceof ArrayBuffer?new Uint8Array(d.data):new Uint8Array(d.data.buffer||d.data);c.send({t:'ok',msg:loadRom(u,String(d.name||'jogo').slice(0,60))?'Jogo aberto na TV':'A TV não conseguiu abrir esse jogo'})}
     else if(d.t==='cmd'){
       if(d.c==='save')emu.save();else if(d.c==='load')emu.loadState();
       else if(d.c==='menu')menuOpen()?closeMenu():openMenu();
+      else if(d.c==='sound'){emu.toggleSound();sndLbl()}
       emu.wakeAudio();
     }
   }
@@ -458,12 +481,16 @@ function startPad(code){
     status('Procurando a TV '+code+'…');
     conn=peer.connect(PREFIX+code,{reliable:true});
     const cc=conn;setTimeout(()=>{if(conn===cc&&!cc.open){status('Não conectou — TV e celular no mesmo Wi‑Fi? Tentando de novo…');try{cc.close()}catch(e){}retry()}},10000);
-    conn.on('open',()=>{lastRx=Date.now();status('Conectado',true);send({t:'p',m:pad.mask})});
+    conn.on('open',()=>{lastRx=Date.now();status('Conectado',true);send({t:'p',m:pad.mask});
+      const pc=conn.peerConnection;setTimeout(()=>{try{pc.getStats().then(st=>{let pair=null;st.forEach(r=>{if(r.type==='candidate-pair'&&r.state==='succeeded'&&(r.nominated||r.selected))pair=r});if(!pair)return;const lc=st.get(pair.localCandidateId),rc=st.get(pair.remoteCandidateId);
+        if((lc&&lc.candidateType==='relay')||(rc&&rc.candidateType==='relay'))toast('⚠ A conexão está passando pela internet (lento). Deixe TV e celular no mesmo Wi‑Fi.',7000);
+        if(pair.currentRoundTripTime)console.log('rtt',pair.currentRoundTripTime)}).catch(()=>{})}catch(e){}},2500)});
     conn.on('data',d=>{
       lastRx=Date.now();
       if(d.t==='hello'){slot=d.slot;status(slot>=0?'Jogador '+(slot+1)+(d.rom?' · '+d.rom:' · envie um jogo'):'Na fila — espere uma vaga',true)}
       else if(d.t==='state'){if(slot>=0)status('Jogador '+(slot+1)+' · '+d.rom,true)}
       else if(d.t==='ok')toast(d.msg);
+      else if(d.t==='speed'){if(d.v<85&&slot>=0)status('Jogador '+(slot+1)+' · TV lenta ('+d.v+'%) — tente 🔊 desligar o som',true)}
     });
     const me=conn;me.on('close',()=>{if(conn===me)retry()});
   }
@@ -473,7 +500,7 @@ function startPad(code){
   setInterval(()=>{
     if(!conn||!conn.open)return;
     if(Date.now()-lastRx>5000){status('A TV parou de responder — reconectando…');const old=conn;conn=null;try{old.close()}catch(e){}retry();return}
-    send({t:'hb'});
+    send({t:'hb',m:pad.mask});
   },1500);
   connect();
   document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>send({t:'cmd',c:b.dataset.cmd}));
