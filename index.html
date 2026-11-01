@@ -87,7 +87,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 
 /* controle (gamepad) — usado no modo controle e no solo */
 .ctrl{position:relative;flex:1;touch-action:none}
-.dpad{position:absolute;left:5vw;top:50%;transform:translateY(-50%);width:44vmin;width:min(44vmin,190px);height:44vmin;height:min(44vmin,190px)}
+.dpad{position:absolute;left:5vw;top:50%;transform:translateY(-50%);width:calc(min(44vmin,190px)*var(--k,1));height:calc(min(44vmin,190px)*var(--k,1))}
 .dpad .arm{position:absolute;background:#2a3142;border:1px solid #39425a}
 .dpad .h{left:0;right:0;top:33.3%;height:33.4%;border-radius:12px}
 .dpad .v{top:0;bottom:0;left:33.3%;width:33.4%;border-radius:12px}
@@ -95,13 +95,13 @@ button{font:inherit;color:inherit;cursor:pointer}
 .dpad .ind{position:absolute;width:33.4%;height:33.4%;border-radius:10px;background:transparent;transition:background .05s}
 .dpad .ind.on{background:rgba(62,139,255,.55)}
 .ind.u{left:33.3%;top:0}.ind.d{left:33.3%;bottom:0}.ind.l{left:0;top:33.3%}.ind.r{right:0;top:33.3%}
-.abz{position:absolute;right:5vw;top:50%;transform:translateY(-50%) rotate(-20deg);display:flex;gap:5vmin;gap:min(5vmin,22px);align-items:center}
-.ab{width:22vmin;width:min(22vmin,96px);height:22vmin;height:min(22vmin,96px);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:7vmin;font-size:min(7vmin,30px);border:3px solid rgba(255,255,255,.12);transform:rotate(20deg)}
+.abz{position:absolute;right:5vw;top:50%;transform:translateY(-50%) rotate(-20deg);display:flex;gap:calc(min(5vmin,22px)*var(--k,1));align-items:center}
+.ab{width:calc(min(22vmin,96px)*var(--k,1));height:calc(min(22vmin,96px)*var(--k,1));border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:calc(min(7vmin,30px)*var(--k,1));border:3px solid rgba(255,255,255,.12);transform:rotate(20deg)}
 .ab[data-b="1"]{background:var(--b);color:#2a1a00}
 .ab[data-b="0"]{background:var(--a);color:#fff;margin-top:-10vmin}
 .ab.on{filter:brightness(1.5);transform:rotate(20deg) scale(.93)}
 /* SNES: losango com 4 botões + L/R */
-.dia{position:absolute;right:4vw;top:50%;transform:translateY(-50%);width:48vmin;width:min(48vmin,210px);height:48vmin;height:min(48vmin,210px)}
+.dia{position:absolute;right:4vw;top:50%;transform:translateY(-50%);width:calc(min(48vmin,210px)*var(--k,1));height:calc(min(48vmin,210px)*var(--k,1))}
 .dia .fb{position:absolute;width:36%;height:36%;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:6vmin;font-size:min(6vmin,26px);border:3px solid rgba(255,255,255,.12)}
 .dia .fb[data-b="8"]{left:32%;top:0;background:var(--x);color:#fff}
 .dia .fb[data-b="0"]{right:0;top:32%;background:var(--a);color:#fff}
@@ -127,7 +127,7 @@ button{font:inherit;color:inherit;cursor:pointer}
 #soloEmpty{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:var(--dim);font-size:15px;text-align:center;padding:16px;background:#000}
 #soloEmpty .big{width:auto;font-size:17px;padding:14px 22px}
 #solo .ctrl .rot{display:none}
-@media (orientation:portrait){#solo .dpad{left:4vw;width:40vmin;height:40vmin}#solo .abz{right:4vw}#solo .ab{width:19vmin;height:19vmin}#solo .dia{width:44vmin;height:44vmin}}
+@media (orientation:portrait){#solo .dpad{left:4vw;width:calc(40vmin*var(--k,1));height:calc(40vmin*var(--k,1))}#solo .abz{right:4vw}#solo .ab{width:calc(19vmin*var(--k,1));height:calc(19vmin*var(--k,1))}#solo .dia{width:calc(44vmin*var(--k,1));height:calc(44vmin*var(--k,1))}}
 @media (orientation:landscape){
  #solo{display:block;background:#000}
  #solo .bar{position:absolute;top:0;left:0;right:0;z-index:3;border:none;background:linear-gradient(#000c,#0000);padding:6px 10px}
@@ -136,13 +136,31 @@ button{font:inherit;color:inherit;cursor:pointer}
  #soloScreen{height:100vh;width:calc(100vh*256/240);max-width:100vw;max-height:100vh}
  #snesSolo{height:100vh;width:calc(100vh*256/224);max-width:100vw;max-height:100vh}
  #solo .ctrl{position:absolute;top:0;right:0;bottom:0;left:0;z-index:2}
- #solo .dpad{left:3vw;top:58%;opacity:.55}
- #solo .abz,#solo .dia{right:3vw;top:58%;opacity:.6}
- #solo .mids{bottom:3vh;opacity:.55}
- #solo .sh{top:48px;opacity:.55}
+ #solo .dpad{left:3vw;top:58%;opacity:var(--o,.55)}
+ #solo .abz,#solo .dia{right:3vw;top:58%;opacity:var(--o,.55)}
+ #solo .mids{bottom:3vh;opacity:var(--o,.55)}
+ #solo .sh{top:48px;opacity:var(--o,.55)}
  #solo .dpad .arm,#solo .dpad .cap{background:#3a4258}
  #soloEmpty{z-index:4}
 }
+/* lados invertidos (canhoto) */
+.ctrl.flip .dpad{left:auto;right:5vw}
+.ctrl.flip .abz,.ctrl.flip .dia{right:auto;left:5vw}
+#solo .ctrl.flip .dpad{left:auto;right:4vw}
+#solo .ctrl.flip .abz,#solo .ctrl.flip .dia{right:auto;left:4vw}
+.ctrl.flip .sh[data-b="10"]{left:4vw}.ctrl.flip .sh[data-b="11"]{right:4vw}
+/* configurações */
+.setRow{display:flex;align-items:center;gap:10px;padding:12px;font-size:16px;border-bottom:1px solid var(--line)}
+.setRow span{flex:1}
+.setRow b{min-width:56px;text-align:center}
+.setRow .sbtn{font-size:18px;padding:8px 14px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:8px 12px;font-size:14px}
+.seg button.on{background:var(--blue);color:#fff}
+/* TV: código para entrar no meio da partida */
+#joinBadge{position:fixed;top:2vh;right:2vw;z-index:40;background:rgba(11,13,18,.75);border:1px solid var(--line);border-radius:1.5vh;padding:1vh 2vh;font-size:2.6vh;opacity:.8;pointer-events:none}
+#joinBadge b{color:var(--ok);letter-spacing:.4vh}
+#lobby:not(.hidden) ~ #joinBadge{display:none}
 </style>
 </head>
 <body>
@@ -232,6 +250,7 @@ button{font:inherit;color:inherit;cursor:pointer}
       <div id="libTV"></div>
     </div>
   </div>
+  <div id="joinBadge">📱 Entrar: <b id="joinCode">----</b> <span id="joinSlots"></span></div>
 </div>
 
 <!-- CONTROLE -->
@@ -241,6 +260,7 @@ button{font:inherit;color:inherit;cursor:pointer}
     <div class="stat" id="pStatus">Conectando…</div>
     <span id="ping" style="font-size:12px;color:var(--dim);flex:none"></span>
     <button class="sbtn" id="padGames">🎮</button>
+    <button class="sbtn" id="padSet">⚙️</button>
     <button class="sbtn" data-cmd="save">💾</button>
     <button class="sbtn" data-cmd="load">⏪</button>
     <button class="sbtn" data-cmd="sound">🔊</button>
@@ -255,6 +275,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   <div class="bar">
     <div class="stat" id="soloStat">Leve Emu</div>
     <button class="sbtn" id="soloGames">🎮</button>
+    <button class="sbtn" id="soloSet">⚙️</button>
     <button class="sbtn" id="soloSave">💾</button>
     <button class="sbtn" id="soloLoad">⏪</button>
     <button class="sbtn" id="soloSound">🔊</button>
@@ -284,6 +305,7 @@ const EJS_DATA='https://cdn.emulatorjs.org/stable/data/';
 const $=id=>document.getElementById(id);
 const qs=new URLSearchParams(location.search);
 const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v);return true}catch(e){return false}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const padCfg=(()=>{let c={};try{c=JSON.parse(store.get('levemu-pad')||'{}')}catch(e){}return{k:c.k||1,o:c.o||0.55,flip:!!c.flip,vib:c.vib!==false}})();
 let toastT;
 function toast(msg,ms){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),ms||2600)}
 function baseURL(){return location.origin+location.pathname}
@@ -526,6 +548,34 @@ function makeMachine(nesCanvas,snesBox){
   return m;
 }
 
+/* =================== AJUSTES DO CONTROLE =================== */
+function savePadCfg(){store.set('levemu-pad',JSON.stringify(padCfg))}
+function openSettings(pad,showOpacity){
+  $('sheetTitle').textContent='⚙️ Ajustes do controle';
+  function row(label,inner){return '<div class="setRow"><span>'+label+'</span>'+inner+'</div>'}
+  function draw(){
+    let h=row('Tamanho dos botões','<button class="sbtn" data-a="k-">−</button><b>'+Math.round(padCfg.k*100)+'%</b><button class="sbtn" data-a="k+">+</button>');
+    h+=row('Direcional do lado','<div class="seg"><button data-a="l" class="'+(padCfg.flip?'':'on')+'">Esquerdo</button><button data-a="r" class="'+(padCfg.flip?'on':'')+'">Direito</button></div>');
+    if(showOpacity)h+=row('Transparência (celular deitado)','<button class="sbtn" data-a="o-">−</button><b>'+Math.round(padCfg.o*100)+'%</b><button class="sbtn" data-a="o+">+</button>');
+    h+=row('Vibrar ao tocar','<div class="seg"><button data-a="v1" class="'+(padCfg.vib?'on':'')+'">Sim</button><button data-a="v0" class="'+(padCfg.vib?'':'on')+'">Não</button></div>');
+    h+=row('Voltar ao padrão','<button class="sbtn" data-a="reset">↺</button>');
+    $('sheetList').innerHTML=h;
+    $('sheetList').querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
+      const a=b.dataset.a;
+      if(a==='k-')padCfg.k=Math.max(.6,Math.round((padCfg.k-.1)*10)/10);
+      if(a==='k+')padCfg.k=Math.min(1.6,Math.round((padCfg.k+.1)*10)/10);
+      if(a==='o-')padCfg.o=Math.max(.2,Math.round((padCfg.o-.1)*100)/100);
+      if(a==='o+')padCfg.o=Math.min(1,Math.round((padCfg.o+.1)*100)/100);
+      if(a==='l')padCfg.flip=false;if(a==='r')padCfg.flip=true;
+      if(a==='v1')padCfg.vib=true;if(a==='v0')padCfg.vib=false;
+      if(a==='reset'){padCfg.k=1;padCfg.o=.55;padCfg.flip=false;padCfg.vib=true}
+      savePadCfg();pad.apply();draw();
+    });
+  }
+  draw();
+  $('sheet').classList.remove('hidden');
+}
+
 /* =================== GAMEPAD DE TOQUE (controle e solo) =================== */
 // bits: 0 A, 1 B, 2 SELECT, 3 START, 4 cima, 5 baixo, 6 esq, 7 dir, 8 X, 9 Y, 10 L, 11 R
 function makeTouchPad(root,onMask){
@@ -570,14 +620,16 @@ function makeTouchPad(root,onMask){
   }
   function set(m){
     if(m===mask)return;
-    if(m&~mask)try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
+    if(m&~mask&&padCfg.vib)try{navigator.vibrate&&navigator.vibrate(12)}catch(e){}
     mask=m;onMask(m);
     for(const [el,b] of vis)el.classList.toggle('on',!!(m&(1<<b)));
     for(const el of btns)el.classList.toggle('on',!!(m&(1<<(+el.dataset.b))));
   }
   ['touchstart','touchmove','touchend','touchcancel'].forEach(ev=>root.addEventListener(ev,onTouch,{passive:false}));
   document.addEventListener('visibilitychange',()=>{if(document.hidden)set(0)});
-  const pad={get mask(){return mask},release(){set(0)},setSys:render,onFirst:null,onTouch:null};
+  function apply(){root.style.setProperty('--k',padCfg.k);root.style.setProperty('--o',padCfg.o);root.classList.toggle('flip',!!padCfg.flip)}
+  const pad={get mask(){return mask},release(){set(0)},setSys:render,apply,onFirst:null,onTouch:null};
+  apply();
   render('nes');
   return pad;
 }
@@ -606,7 +658,8 @@ function startSolo(){
     const lib=await libraryItems();
     openSheet('Escolher jogo',lib,async id=>{try{await loadAndPlay(await fetchItem(id),id)}catch(e){toast('Não abriu: '+e.message)}},async()=>{const r=await pickFile();if(r)loadAndPlay(r)});
   }
-  $('soloGames').onclick=games;$('soloGames2').onclick=games;
+  $('soloGames').onclick=games;
+  $('soloSet').onclick=()=>openSettings(pad,true);$('soloGames2').onclick=games;
   $('soloSave').onclick=emu.save;
   $('soloLoad').onclick=emu.loadState;
   const sl=()=>{$('soloSound').textContent=emu.sound?'🔊':'🔇'};sl();$('soloSound').onclick=()=>{emu.toggleSound();emu.wakeAudio();sl()};
@@ -671,7 +724,7 @@ function startHost(){
   function newCode(){const c=String(1000+Math.floor(Math.random()*9000));store.set('levemu-code',c);return c}
   const conns=new Set(),slots=[null,null];let peer,tries=0;
   function showCode(){
-    $('codeBig').textContent=code;
+    $('codeBig').textContent=code;$('joinCode').textContent=code;
     const url=baseURL()+'?join='+code;$('urlTxt').textContent=url;
     const q=$('qr');q.innerHTML='';
     if(typeof QRCode!=='undefined')new QRCode(q,{text:url,width:400,height:400,correctLevel:QRCode.CorrectLevel.M});
@@ -746,6 +799,7 @@ function startHost(){
   function renderPlayers(){
     const wait=[...conns].filter(c=>c.slot<0).length;
     $('players').innerHTML=slots.map((s,i)=>'<div class="chip'+(s?' on':'')+'">'+(s?'🟢':'⚪')+' Jogador '+(i+1)+'</div>').join('')+(wait?'<div class="chip">+'+wait+' na fila</div>':'');
+    const n=slots.filter(Boolean).length;$('joinSlots').textContent='· '+n+'/2'+(wait?' (+'+wait+' na fila)':'');
   }
   renderPlayers();startPeer();renderLib();
   emu.loadLast().then(ok=>{if(ok){$('romLine').innerHTML=tagHTML(emu.sys)+esc(emu.romName);emu.paused=menuOpen();broadcast({t:'state',rom:emu.romName,sys:emu.sys})}});
@@ -804,6 +858,7 @@ function startPad(code){
   },1500);
   connect();
   document.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>send({t:'cmd',c:b.dataset.cmd}));
+  $('padSet').onclick=()=>openSettings(pad,false);
   $('padGames').onclick=()=>{
     if(!conn||!conn.open)return toast('Ainda não conectado na TV');
     const repo=tvLib.filter(g=>g.id.startsWith('r:')),local=tvLib.filter(g=>!g.id.startsWith('r:'));
